@@ -16,4 +16,6 @@ export interface Dashboard {
   tasks: StudyTask[];
   xp: number;
   streak: number;
+  questionsThisWeek: number;
+  masteredTopics: number;
 }

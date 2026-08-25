@@ -1,6 +1,7 @@
-import { BookOpen, Brain, CalendarDays, ChevronRight, CircleHelp, LayoutDashboard, Library, ListChecks, Menu, Plus, Sparkles, X } from "lucide-react";
+import { BookOpen, Brain, CalendarDays, ChevronRight, LayoutDashboard, Library, ListChecks, LogOut, Menu, Plus, Sparkles, X } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { Link, useLocation } from "wouter";
+import { useAuth } from "@/lib/auth-context";
 
 const navItems = [
   { href: "/", label: "Today", icon: LayoutDashboard },
@@ -23,6 +24,14 @@ export function BrandMark() {
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const [location] = useLocation();
+  const { user, signOut } = useAuth();
+  const displayName = (user?.user_metadata?.["full_name"] as string | undefined) || user?.email || "Student";
+  const initials = displayName
+    .split(/[\s@]+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("") || "S";
   return (
     <div className="flex h-full flex-col px-5 py-6">
       <div className="mb-10 px-1"><BrandMark /></div>
@@ -54,9 +63,9 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           <p className="text-[12px] leading-relaxed text-sidebar-foreground/65">A little focused practice today makes tomorrow lighter.</p>
         </div>
         <div className="flex items-center gap-3 border-t border-sidebar-border pt-4">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-accent text-[12px] font-bold text-primary">AM</div>
-          <div className="min-w-0"><p className="truncate text-[13px] font-semibold">Alex Morgan</p><p className="text-[11px] text-sidebar-foreground/45">Keep going, Alex</p></div>
-          <CircleHelp className="ml-auto h-4 w-4 text-sidebar-foreground/40" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-accent text-[12px] font-bold text-primary">{initials}</div>
+          <div className="min-w-0"><p className="truncate text-[13px] font-semibold">{displayName}</p><p className="truncate text-[11px] text-sidebar-foreground/45">Keep going{displayName !== "Student" ? `, ${displayName.split(" ")[0]}` : ""}</p></div>
+          <button type="button" onClick={() => void signOut()} data-testid="button-sign-out" title="Sign out" className="ml-auto rounded-lg p-1.5 text-sidebar-foreground/40 hover:bg-sidebar-accent hover:text-sidebar-foreground"><LogOut className="h-4 w-4" /></button>
         </div>
       </div>
     </div>

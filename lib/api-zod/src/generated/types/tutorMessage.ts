@@ -10,4 +10,5 @@ export interface TutorMessage {
   role: string;
   message: string;
   prompt: string;
+  conversationId: string;
 }

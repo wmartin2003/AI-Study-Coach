@@ -6,10 +6,15 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './conversationHistory';
+export * from './conversationMessage';
 export * from './course';
 export * from './courseInput';
+export * from './courseTopic';
 export * from './dashboard';
 export * from './healthStatus';
+export * from './profile';
+export * from './profileInput';
 export * from './quizAnswerInput';
 export * from './quizFeedback';
 export * from './quizQuestion';

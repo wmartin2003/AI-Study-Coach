@@ -26,6 +26,47 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /profile:
+    get:
+      operationId: getProfile
+      tags: [study]
+      summary: Get the signed-in student's profile
+      responses:
+        "200":
+          description: Profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+    patch:
+      operationId: updateProfile
+      tags: [study]
+      summary: Update the signed-in student's profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfileInput"
+      responses:
+        "200":
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+  /tutor/conversation:
+    get:
+      operationId: getTutorConversation
+      tags: [study]
+      summary: Get the student's most recent tutor conversation
+      responses:
+        "200":
+          description: Conversation history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConversationHistory"
   /dashboard:
     get:
       operationId: getDashboard
@@ -126,18 +167,57 @@ components:
           type: string
       required:
         - status
+    Profile:
+      type: object
+      required: [id, fullName, onboardingCompleted]
+      properties:
+        id: { type: string }
+        fullName: { type: ["string", "null"] }
+        gradeLevel: { type: ["string", "null"] }
+        studyMinutesPerDay: { type: ["number", "null"] }
+        learningStyle: { type: ["string", "null"] }
+        onboardingCompleted: { type: boolean }
+    ProfileInput:
+      type: object
+      properties:
+        fullName: { type: string }
+        gradeLevel: { type: string }
+        studyMinutesPerDay: { type: number }
+        learningStyle: { type: string }
+        onboardingCompleted: { type: boolean }
+    ConversationMessage:
+      type: object
+      required: [role, message]
+      properties:
+        role: { type: string }
+        message: { type: string }
+    ConversationHistory:
+      type: object
+      required: [conversationId, messages]
+      properties:
+        conversationId: { type: ["string", "null"] }
+        messages:
+          type: array
+          items: { $ref: "#/components/schemas/ConversationMessage" }
+    CourseTopic:
+      type: object
+      required: [name, masteryLevel, masteryScore]
+      properties:
+        name: { type: string }
+        masteryLevel: { type: string }
+        masteryScore: { type: number }
     Course:
       type: object
       required: [id, name, examDate, level, progress, topics]
       properties:
-        id: { type: number }
+        id: { type: string }
         name: { type: string }
         examDate: { type: string }
         level: { type: string }
         progress: { type: number }
         topics:
           type: array
-          items: { type: string }
+          items: { $ref: "#/components/schemas/CourseTopic" }
     CourseInput:
       type: object
       required: [name, examDate, level]
@@ -155,7 +235,7 @@ components:
         completed: { type: boolean }
     Dashboard:
       type: object
-      required: [greeting, courseName, courseProgress, strongestTopic, focusTopic, tasks, xp, streak]
+      required: [greeting, courseName, courseProgress, strongestTopic, focusTopic, tasks, xp, streak, questionsThisWeek, masteredTopics]
       properties:
         greeting: { type: string }
         courseName: { type: string }
@@ -167,24 +247,28 @@ components:
           items: { $ref: "#/components/schemas/StudyTask" }
         xp: { type: number }
         streak: { type: number }
+        questionsThisWeek: { type: number }
+        masteredTopics: { type: number }
     TutorMessageInput:
       type: object
       required: [message]
       properties:
         message: { type: string, minLength: 1 }
         context: { type: ["string", "null"] }
+        conversationId: { type: ["string", "null"] }
     TutorMessage:
       type: object
-      required: [role, message, prompt]
+      required: [role, message, prompt, conversationId]
       properties:
         role: { type: string }
         message: { type: string }
         prompt: { type: string }
+        conversationId: { type: string }
     QuizQuestion:
       type: object
       required: [id, number, total, topic, question, options, difficulty]
       properties:
-        id: { type: number }
+        id: { type: string }
         number: { type: number }
         total: { type: number }
         topic: { type: string }
@@ -197,7 +281,7 @@ components:
       type: object
       required: [questionId, answer]
       properties:
-        questionId: { type: number }
+        questionId: { type: string }
         answer: { type: string }
     QuizFeedback:
       type: object

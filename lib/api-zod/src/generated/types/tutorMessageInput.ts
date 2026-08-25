@@ -11,4 +11,6 @@ export interface TutorMessageInput {
   message: string;
   /** @nullable */
   context?: string | null;
+  /** @nullable */
+  conversationId?: string | null;
 }
