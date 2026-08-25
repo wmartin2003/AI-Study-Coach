@@ -6,7 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface QuizAnswerInput {
-  questionId: string;
-  answer: string;
+export interface ConversationMessage {
+  role: string;
+  message: string;
 }

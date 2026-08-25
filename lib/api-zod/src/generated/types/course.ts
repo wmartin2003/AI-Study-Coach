@@ -5,12 +5,13 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { CourseTopic } from './courseTopic';
 
 export interface Course {
-  id: number;
+  id: string;
   name: string;
   examDate: string;
   level: string;
   progress: number;
-  topics: string[];
+  topics: CourseTopic[];
 }

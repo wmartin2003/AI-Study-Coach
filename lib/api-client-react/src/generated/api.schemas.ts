@@ -9,13 +9,51 @@ export interface HealthStatus {
   status: string;
 }
 
+export interface Profile {
+  id: string;
+  /** @nullable */
+  fullName: string | null;
+  /** @nullable */
+  gradeLevel?: string | null;
+  /** @nullable */
+  studyMinutesPerDay?: number | null;
+  /** @nullable */
+  learningStyle?: string | null;
+  onboardingCompleted: boolean;
+}
+
+export interface ProfileInput {
+  fullName?: string;
+  gradeLevel?: string;
+  studyMinutesPerDay?: number;
+  learningStyle?: string;
+  onboardingCompleted?: boolean;
+}
+
+export interface ConversationMessage {
+  role: string;
+  message: string;
+}
+
+export interface ConversationHistory {
+  /** @nullable */
+  conversationId: string | null;
+  messages: ConversationMessage[];
+}
+
+export interface CourseTopic {
+  name: string;
+  masteryLevel: string;
+  masteryScore: number;
+}
+
 export interface Course {
-  id: number;
+  id: string;
   name: string;
   examDate: string;
   level: string;
   progress: number;
-  topics: string[];
+  topics: CourseTopic[];
 }
 
 export interface CourseInput {
@@ -43,6 +81,8 @@ export interface Dashboard {
   tasks: StudyTask[];
   xp: number;
   streak: number;
+  questionsThisWeek: number;
+  masteredTopics: number;
 }
 
 export interface TutorMessageInput {
@@ -50,16 +90,19 @@ export interface TutorMessageInput {
   message: string;
   /** @nullable */
   context?: string | null;
+  /** @nullable */
+  conversationId?: string | null;
 }
 
 export interface TutorMessage {
   role: string;
   message: string;
   prompt: string;
+  conversationId: string;
 }
 
 export interface QuizQuestion {
-  id: number;
+  id: string;
   number: number;
   total: number;
   topic: string;
@@ -69,7 +112,7 @@ export interface QuizQuestion {
 }
 
 export interface QuizAnswerInput {
-  questionId: number;
+  questionId: string;
   answer: string;
 }
 

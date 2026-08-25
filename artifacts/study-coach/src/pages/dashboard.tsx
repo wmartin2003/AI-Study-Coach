@@ -1,36 +1,24 @@
-import { ArrowRight, BookOpen, Check, Clock3, Lightbulb, Target, Trophy, Zap } from "lucide-react";
+import { ArrowRight, BookOpen, Check, Clock3, Lightbulb, Plus, Target, Trophy, Zap } from "lucide-react";
 import { useMemo } from "react";
 import { Link } from "wouter";
 import { getGetDashboardQueryKey, useGetDashboard } from "@workspace/api-client-react";
 import type { Dashboard } from "@workspace/api-client-react";
-import { AppShell, Button, ErrorNotice, PageHeading, ProgressBar, SkeletonBlock, StatPill } from "@/components/app-shell";
-
-const fallbackDashboard: Dashboard = {
-  greeting: "Good morning, Alex",
-  courseName: "Computer Networks",
-  courseProgress: 68,
-  strongestTopic: "TCP congestion control",
-  focusTopic: "Routing protocols",
-  tasks: [
-    { label: "Review distance-vector routing", duration: "18 min", kind: "Review", completed: false },
-    { label: "Socratic session: BGP paths", duration: "12 min", kind: "Tutor", completed: false },
-    { label: "Adaptive quiz · 10 questions", duration: "15 min", kind: "Quiz", completed: true },
-  ],
-  xp: 1240,
-  streak: 6,
-};
+import { AppShell, Button, EmptyState, ErrorNotice, PageHeading, ProgressBar, SkeletonBlock, StatPill } from "@/components/app-shell";
 
 export default function DashboardPage() {
   const dashboardQuery = useGetDashboard({ query: { queryKey: getGetDashboardQueryKey() } });
-  const data = dashboardQuery.data ?? fallbackDashboard;
-  const tasks = useMemo(() => data.tasks ?? fallbackDashboard.tasks, [data.tasks]);
+  const data = dashboardQuery.data;
+  const tasks = useMemo(() => data?.tasks ?? [], [data]);
   const completed = tasks.filter((task) => task.completed).length;
+  const dayLabel = useMemo(() => new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }), []);
 
   return <AppShell>
     <div className="coach-rise">
-      <PageHeading eyebrow="Tuesday, October 15" title={data.greeting || "Good morning"} description="Your next best step is ready when you are."
+      <PageHeading eyebrow={dayLabel} title={data?.greeting || "Good morning"} description="Your next best step is ready when you are."
         action={<Link href="/tutor" data-testid="link-dashboard-tutor" className="hidden items-center gap-2 text-[13px] font-semibold text-primary transition-transform hover:translate-x-0.5 sm:flex">Need a nudge? <ArrowRight className="h-4 w-4" /></Link>} />
-      {dashboardQuery.isLoading ? <DashboardSkeleton /> : dashboardQuery.isError ? <ErrorNotice onRetry={() => dashboardQuery.refetch()} /> : <div className="space-y-6">
+      {dashboardQuery.isLoading ? <DashboardSkeleton /> : dashboardQuery.isError ? <ErrorNotice onRetry={() => dashboardQuery.refetch()} /> : !data?.courseName ? (
+        <EmptyState title="Add your first course" description="Once you add a course, your coach will build a daily plan and track your progress here." action={<Link href="/courses/new" data-testid="link-dashboard-add-course"><Button><Plus className="h-4 w-4" /> Add a course</Button></Link>} />
+      ) : <div className="space-y-6">
         <section className="relative overflow-hidden rounded-[26px] bg-primary p-6 text-primary-foreground shadow-xl shadow-primary/10 sm:p-8">
           <div className="absolute -right-8 -top-20 h-64 w-64 rounded-full border-[36px] border-accent/15" /><div className="absolute -bottom-24 right-28 h-48 w-48 rounded-full border-[20px] border-primary-foreground/5" />
           <div className="relative grid gap-8 lg:grid-cols-[1.1fr_.9fr] lg:items-center">
@@ -54,11 +42,11 @@ export default function DashboardPage() {
           </section>
           <section className="rounded-[22px] border border-border bg-card p-5 sm:p-6">
             <div className="mb-5 flex items-center gap-2"><div className="flex h-8 w-8 items-center justify-center rounded-xl bg-accent/25 text-primary"><Target className="h-4 w-4" /></div><div><p className="font-mono-ui text-[10px] uppercase tracking-[0.16em] text-muted-foreground">A gentle focus</p><h2 className="mt-0.5 font-display text-xl font-semibold text-primary">Build this next</h2></div></div>
-            <div className="rounded-2xl bg-secondary/70 p-4"><p className="font-mono-ui text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Focus topic</p><p className="mt-2 font-display text-[22px] font-semibold leading-tight text-primary">{data.focusTopic || "Routing protocols"}</p><p className="mt-2 text-[12px] leading-relaxed text-muted-foreground">A short explanation with your tutor will make this click.</p><Link href="/tutor" data-testid="link-focus-tutor" className="mt-4 inline-flex items-center gap-1.5 text-[12px] font-bold text-primary">Explore with tutor <ArrowRight className="h-3.5 w-3.5" /></Link></div>
-            <div className="mt-4 flex items-center gap-3 border-t border-border pt-4"><Lightbulb className="h-4 w-4 text-chart-3" /><p className="text-[12px] text-muted-foreground">Your strongest topic is <strong className="font-semibold text-primary">{data.strongestTopic || "TCP congestion control"}</strong>.</p></div>
+            <div className="rounded-2xl bg-secondary/70 p-4"><p className="font-mono-ui text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Focus topic</p><p className="mt-2 font-display text-[22px] font-semibold leading-tight text-primary">{data.focusTopic || "Add your first topic"}</p><p className="mt-2 text-[12px] leading-relaxed text-muted-foreground">A short explanation with your tutor will make this click.</p><Link href="/tutor" data-testid="link-focus-tutor" className="mt-4 inline-flex items-center gap-1.5 text-[12px] font-bold text-primary">Explore with tutor <ArrowRight className="h-3.5 w-3.5" /></Link></div>
+            {data.strongestTopic && <div className="mt-4 flex items-center gap-3 border-t border-border pt-4"><Lightbulb className="h-4 w-4 text-chart-3" /><p className="text-[12px] text-muted-foreground">Your strongest topic is <strong className="font-semibold text-primary">{data.strongestTopic}</strong>.</p></div>}
           </section>
         </div>
-        <section className="grid grid-cols-2 gap-3 sm:grid-cols-4"><StatPill label="Study streak" value={`${data.streak || 0} days`} accent /><StatPill label="Earned XP" value={`${data.xp || 0} xp`} /><StatPill label="Sessions this week" value="4 sessions" /><StatPill label="Quiet wins" value="12 topics" /></section>
+        <section className="grid grid-cols-2 gap-3 sm:grid-cols-4"><StatPill label="Study streak" value={`${data.streak || 0} days`} accent /><StatPill label="Earned XP" value={`${data.xp || 0} xp`} /><StatPill label="Questions this week" value={`${data.questionsThisWeek || 0}`} /><StatPill label="Topics mastered" value={`${data.masteredTopics || 0}`} /></section>
       </div>}
     </div>
   </AppShell>;

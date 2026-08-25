@@ -18,6 +18,52 @@ export const HealthCheckResponse = zod.object({
 
 
 /**
+ * @summary Get the signed-in student's profile
+ */
+export const GetProfileResponse = zod.object({
+  "id": zod.string(),
+  "fullName": zod.string().nullable(),
+  "gradeLevel": zod.string().nullish(),
+  "studyMinutesPerDay": zod.number().nullish(),
+  "learningStyle": zod.string().nullish(),
+  "onboardingCompleted": zod.boolean()
+})
+
+
+/**
+ * @summary Update the signed-in student's profile
+ */
+export const UpdateProfileBody = zod.object({
+  "fullName": zod.string().optional(),
+  "gradeLevel": zod.string().optional(),
+  "studyMinutesPerDay": zod.number().optional(),
+  "learningStyle": zod.string().optional(),
+  "onboardingCompleted": zod.boolean().optional()
+})
+
+export const UpdateProfileResponse = zod.object({
+  "id": zod.string(),
+  "fullName": zod.string().nullable(),
+  "gradeLevel": zod.string().nullish(),
+  "studyMinutesPerDay": zod.number().nullish(),
+  "learningStyle": zod.string().nullish(),
+  "onboardingCompleted": zod.boolean()
+})
+
+
+/**
+ * @summary Get the student's most recent tutor conversation
+ */
+export const GetTutorConversationResponse = zod.object({
+  "conversationId": zod.string().nullable(),
+  "messages": zod.array(zod.object({
+  "role": zod.string(),
+  "message": zod.string()
+}))
+})
+
+
+/**
  * @summary Get the student's study dashboard
  */
 export const GetDashboardResponse = zod.object({
@@ -33,7 +79,9 @@ export const GetDashboardResponse = zod.object({
   "completed": zod.boolean()
 })),
   "xp": zod.number(),
-  "streak": zod.number()
+  "streak": zod.number(),
+  "questionsThisWeek": zod.number(),
+  "masteredTopics": zod.number()
 })
 
 
@@ -41,12 +89,16 @@ export const GetDashboardResponse = zod.object({
  * @summary List study courses
  */
 export const ListCoursesResponseItem = zod.object({
-  "id": zod.number(),
+  "id": zod.string(),
   "name": zod.string(),
   "examDate": zod.string(),
   "level": zod.string(),
   "progress": zod.number(),
-  "topics": zod.array(zod.string())
+  "topics": zod.array(zod.object({
+  "name": zod.string(),
+  "masteryLevel": zod.string(),
+  "masteryScore": zod.number()
+}))
 })
 export const ListCoursesResponse = zod.array(ListCoursesResponseItem)
 
@@ -66,12 +118,16 @@ export const CreateCourseBody = zod.object({
 })
 
 export const CreateCourseResponse = zod.object({
-  "id": zod.number(),
+  "id": zod.string(),
   "name": zod.string(),
   "examDate": zod.string(),
   "level": zod.string(),
   "progress": zod.number(),
-  "topics": zod.array(zod.string())
+  "topics": zod.array(zod.object({
+  "name": zod.string(),
+  "masteryLevel": zod.string(),
+  "masteryScore": zod.number()
+}))
 })
 
 
@@ -83,13 +139,15 @@ export const CreateCourseResponse = zod.object({
 
 export const SendTutorMessageBody = zod.object({
   "message": zod.string().min(1),
-  "context": zod.string().nullish()
+  "context": zod.string().nullish(),
+  "conversationId": zod.string().nullish()
 })
 
 export const SendTutorMessageResponse = zod.object({
   "role": zod.string(),
   "message": zod.string(),
-  "prompt": zod.string()
+  "prompt": zod.string(),
+  "conversationId": zod.string()
 })
 
 
@@ -97,7 +155,7 @@ export const SendTutorMessageResponse = zod.object({
  * @summary Get the current adaptive quiz
  */
 export const GetQuizResponse = zod.object({
-  "id": zod.number(),
+  "id": zod.string(),
   "number": zod.number(),
   "total": zod.number(),
   "topic": zod.string(),
@@ -111,7 +169,7 @@ export const GetQuizResponse = zod.object({
  * @summary Submit an answer and get feedback
  */
 export const SubmitQuizAnswerBody = zod.object({
-  "questionId": zod.number(),
+  "questionId": zod.string(),
   "answer": zod.string()
 })
 

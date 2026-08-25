@@ -7,7 +7,7 @@
  */
 
 export interface QuizQuestion {
-  id: number;
+  id: string;
   number: number;
   total: number;
   topic: string;

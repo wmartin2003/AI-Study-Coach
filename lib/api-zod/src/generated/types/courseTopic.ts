@@ -6,7 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface QuizAnswerInput {
-  questionId: string;
-  answer: string;
+export interface CourseTopic {
+  name: string;
+  masteryLevel: string;
+  masteryScore: number;
 }
