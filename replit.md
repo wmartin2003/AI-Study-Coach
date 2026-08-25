@@ -1,6 +1,6 @@
-# [Project name]
+# AI Study Coach
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+AI Study Coach turns a student's course material into a focused daily plan, guided tutoring, adaptive quizzes, and targeted review.
 
 ## Run & Operate
 
@@ -22,15 +22,21 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/study-coach/src/pages/` — dashboard, course workspace, tutor, quiz, and new-course flows
+- `artifacts/study-coach/src/components/app-shell.tsx` — responsive navigation and shared UI
+- `lib/api-spec/openapi.yaml` — source of truth for study API contracts
+- `artifacts/api-server/src/routes/study.ts` — study endpoints and seeded MVP data
+- `artifacts/study-coach/src/index.css` — app theme and visual tokens
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- The first slice uses the shared API server with a small in-memory seed so the core loop is immediately usable without requiring sign-in or course ingestion.
+- The frontend consumes generated React Query hooks from the OpenAPI contract rather than hand-written client types.
+- The product centers on one daily next step, with tutoring and quizzes as adjacent actions from the same course context.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+Students can see today's plan and progress, open a Computer Networks course workspace, ask a Socratic tutor for help, take an adaptive quiz, and create another course.
 
 ## User preferences
 
@@ -38,7 +44,8 @@ _Populate as you build — explicit user instructions worth remembering across s
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- Run `pnpm --filter @workspace/api-spec run codegen` after changing the API contract.
+- The current generated Zod setup does not support `zod.int()`; OpenAPI numeric fields use `number` for compatibility.
 
 ## Pointers
 

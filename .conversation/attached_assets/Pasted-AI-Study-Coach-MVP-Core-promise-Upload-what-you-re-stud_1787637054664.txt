@@ -1,0 +1,172 @@
+AI Study Coach — MVP
+
+Core promise
+
+“Upload what you’re studying. Your AI coach creates a personalized study plan, teaches you, tests you, and remembers what you struggle with.”
+
+The MVP should revolve around one loop:
+
+Learn → Practice → Get tested → Identify weaknesses → Review → Repeat
+
+⸻
+
+1. 🏠 Home Dashboard
+
+When the student opens the app:
+
+Good evening, Wilhelm 👋
+
+Today’s Study Plan
+
+Computer Networks — 45 min
+
+* 📖 Review: TCP vs UDP — 10 min
+* 🧠 Learn: Congestion control — 15 min
+* ❓ Practice: 10 questions — 15 min
+* 🔄 Review mistakes — 5 min
+
+Progress
+
+███████░░░ 72%
+
+You’re strongest in routing.
+You need more practice with congestion control.
+
+Big button
+
+▶ Start Study Session
+
+⸻
+
+2. 📚 Create a Course
+
+User taps:
+
++ New Course
+
+They enter:
+
+Course: Database Systems
+Exam: October 12
+Current knowledge: Beginner
+
+Then upload:
+
+* PDF lectures
+* PowerPoints
+* Notes
+* Study guides
+* Textbooks
+
+The AI processes them and creates a course knowledge base.
+
+⸻
+
+3. 🤖 AI Tutor
+
+This is the main feature.
+
+Instead of simply giving answers, the AI acts like a teacher.
+
+Student:
+
+“I don’t understand normalization.”
+
+AI:
+
+Let’s break it down.
+
+Imagine you have a student table containing:
+
+Student → Course → Professor
+
+What problem might happen if one professor teaches multiple courses?
+
+The AI uses Socratic questioning instead of immediately giving the answer.
+
+Buttons:
+
+Explain simpler
+
+Give example
+
+Quiz me
+
+Show me
+
+I still don’t understand
+
+⸻
+
+4. 🧠 AI Generates a Study Plan
+
+This is the feature I’d make your differentiator.
+
+The student tells it:
+
+“My exam is in 18 days.”
+
+AI analyzes the uploaded material and creates:
+
+18-Day Plan
+
+Week 1
+
+* Relational algebra
+* SQL
+* Normalization
+* Transactions
+
+Week 2
+
+* Indexing
+* Concurrency
+* Recovery
+* Practice exams
+
+Final 4 days
+
+* Weak topics
+* Mock exams
+* Spaced review
+
+The plan automatically adjusts based on performance.
+
+⸻
+
+5. ❓ AI Quiz Generator
+
+After studying a topic:
+
+Quick Quiz
+
+Question 1/10
+
+Which normal form eliminates partial dependencies?
+
+A. 1NF
+B. 2NF
+C. 3NF
+D. BCNF
+
+Student answers:
+
+B
+
+AI:
+
+✅ Correct.
+
++10 XP
+
+You seem comfortable with 2NF.
+
+Then question 2.
+
+⸻
+
+6. 🔥 Adaptive Difficulty
+
+This is extremely important.
+
+Don’t just generate random questions.

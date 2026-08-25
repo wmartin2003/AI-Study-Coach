@@ -1,0 +1,1 @@
+- [OpenAPI validator compatibility](openapi-zod-compatibility.md) — use number fields unless Orval and the installed Zod runtime agree on integer output.

@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: study
+    description: Study coach operations
 paths:
   /healthz:
     get:
@@ -24,6 +26,97 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /dashboard:
+    get:
+      operationId: getDashboard
+      tags: [study]
+      summary: Get the student's study dashboard
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Dashboard"
+  /courses:
+    get:
+      operationId: listCourses
+      tags: [study]
+      summary: List study courses
+      responses:
+        "200":
+          description: Courses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Course"
+    post:
+      operationId: createCourse
+      tags: [study]
+      summary: Create a study course
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CourseInput"
+      responses:
+        "201":
+          description: Course created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Course"
+  /tutor/messages:
+    post:
+      operationId: sendTutorMessage
+      tags: [study]
+      summary: Ask the AI tutor a question
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TutorMessageInput"
+      responses:
+        "200":
+          description: Tutor response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TutorMessage"
+  /quiz:
+    get:
+      operationId: getQuiz
+      tags: [study]
+      summary: Get the current adaptive quiz
+      responses:
+        "200":
+          description: Quiz question
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuizQuestion"
+  /quiz/answers:
+    post:
+      operationId: submitQuizAnswer
+      tags: [study]
+      summary: Submit an answer and get feedback
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QuizAnswerInput"
+      responses:
+        "200":
+          description: Answer feedback
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuizFeedback"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +126,85 @@ components:
           type: string
       required:
         - status
+    Course:
+      type: object
+      required: [id, name, examDate, level, progress, topics]
+      properties:
+        id: { type: number }
+        name: { type: string }
+        examDate: { type: string }
+        level: { type: string }
+        progress: { type: number }
+        topics:
+          type: array
+          items: { type: string }
+    CourseInput:
+      type: object
+      required: [name, examDate, level]
+      properties:
+        name: { type: string, minLength: 1 }
+        examDate: { type: string, minLength: 1 }
+        level: { type: string, minLength: 1 }
+    StudyTask:
+      type: object
+      required: [label, duration, kind, completed]
+      properties:
+        label: { type: string }
+        duration: { type: string }
+        kind: { type: string }
+        completed: { type: boolean }
+    Dashboard:
+      type: object
+      required: [greeting, courseName, courseProgress, strongestTopic, focusTopic, tasks, xp, streak]
+      properties:
+        greeting: { type: string }
+        courseName: { type: string }
+        courseProgress: { type: number }
+        strongestTopic: { type: string }
+        focusTopic: { type: string }
+        tasks:
+          type: array
+          items: { $ref: "#/components/schemas/StudyTask" }
+        xp: { type: number }
+        streak: { type: number }
+    TutorMessageInput:
+      type: object
+      required: [message]
+      properties:
+        message: { type: string, minLength: 1 }
+        context: { type: ["string", "null"] }
+    TutorMessage:
+      type: object
+      required: [role, message, prompt]
+      properties:
+        role: { type: string }
+        message: { type: string }
+        prompt: { type: string }
+    QuizQuestion:
+      type: object
+      required: [id, number, total, topic, question, options, difficulty]
+      properties:
+        id: { type: number }
+        number: { type: number }
+        total: { type: number }
+        topic: { type: string }
+        question: { type: string }
+        options:
+          type: array
+          items: { type: string }
+        difficulty: { type: string }
+    QuizAnswerInput:
+      type: object
+      required: [questionId, answer]
+      properties:
+        questionId: { type: number }
+        answer: { type: string }
+    QuizFeedback:
+      type: object
+      required: [correct, explanation, xp, nextTopic]
+      properties:
+        correct: { type: boolean }
+        explanation: { type: string }
+        xp: { type: number }
+        nextTopic: { type: string }
 
