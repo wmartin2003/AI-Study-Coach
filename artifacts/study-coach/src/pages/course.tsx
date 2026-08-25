@@ -1,17 +1,24 @@
 import { ArrowRight, BookMarked, Check, ChevronDown, Circle, GraduationCap, Play, Plus, Search, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link } from "wouter";
+import { Link, useSearchParams } from "wouter";
 import { getListCoursesQueryKey, useListCourses } from "@workspace/api-client-react";
 import { AppShell, Button, EmptyState, ErrorNotice, PageHeading, ProgressBar, SkeletonBlock } from "@/components/app-shell";
 
 export default function CoursePage() {
   const courseQuery = useListCourses({ query: { queryKey: getListCoursesQueryKey() } });
   const courses = courseQuery.data ?? [];
+  const [searchParams] = useSearchParams();
+  const requestedId = searchParams.get("course");
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!selectedId && courses.length) setSelectedId(courses[0].id);
-  }, [courses, selectedId]);
+    if (!courses.length) return;
+    if (requestedId && courses.some((course) => course.id === requestedId)) {
+      if (selectedId !== requestedId) setSelectedId(requestedId);
+    } else if (!selectedId) {
+      setSelectedId(courses[0].id);
+    }
+  }, [courses, requestedId, selectedId]);
 
   const selected = courses.find((course) => course.id === selectedId) ?? courses[0];
   const [expanded, setExpanded] = useState(true);

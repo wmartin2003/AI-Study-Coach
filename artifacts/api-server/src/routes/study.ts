@@ -130,7 +130,8 @@ router.get("/dashboard", async (req, res) => {
     .from("topics")
     .select("name, mastery_score")
     .eq("course_id", course.id)
-    .order("mastery_score", { ascending: true });
+    .order("mastery_score", { ascending: true })
+    .order("order_index", { ascending: true });
 
   const scores = (topics ?? []).map((t) => Number(t.mastery_score));
   const courseProgress = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
@@ -396,6 +397,7 @@ async function startNewQuiz(supabase: import("@supabase/supabase-js").SupabaseCl
     .select("id, name")
     .eq("course_id", course.id)
     .order("mastery_score", { ascending: true })
+    .order("order_index", { ascending: true })
     .limit(1)
     .maybeSingle();
 

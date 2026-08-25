@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { logger } from "./logger";
 
 const MAX_CHUNK_CHARS = 1200;
 
@@ -32,7 +33,11 @@ async function extractText(fileName: string, mimeType: string | null, buffer: Bu
   const lowerName = fileName.toLowerCase();
 
   if (mimeType === "application/pdf" || lowerName.endsWith(".pdf")) {
-    const { default: pdfParse } = await import("pdf-parse");
+    // Import the internal implementation directly, not the package's
+    // `index.js` entry point — that file runs a self-test against a bundled
+    // sample PDF whenever it misdetects being the "main module" (a known
+    // issue under ESM/bundled interop), which throws ENOENT for everyone else.
+    const { default: pdfParse } = await import("pdf-parse/lib/pdf-parse.js");
     const result = await pdfParse(buffer);
     return result.text;
   }
@@ -95,7 +100,8 @@ export async function processDocument(
 
     await supabase.from("documents").update({ status: "ready", updated_at: new Date().toISOString() }).eq("id", documentId);
     return { status: "ready", chunkCount: chunks.length };
-  } catch {
+  } catch (err) {
+    logger.error({ err, documentId, fileName: doc.file_name }, "Document processing failed");
     await supabase.from("documents").update({ status: "failed", updated_at: new Date().toISOString() }).eq("id", documentId);
     return { status: "failed" };
   }

@@ -46,7 +46,7 @@ export default function DashboardPage() {
             {data.strongestTopic && <div className="mt-4 flex items-center gap-3 border-t border-border pt-4"><Lightbulb className="h-4 w-4 text-chart-3" /><p className="text-[12px] text-muted-foreground">Your strongest topic is <strong className="font-semibold text-primary">{data.strongestTopic}</strong>.</p></div>}
           </section>
         </div>
-        <section className="grid grid-cols-2 gap-3 sm:grid-cols-4"><StatPill label="Study streak" value={`${data.streak || 0} days`} accent /><StatPill label="Earned XP" value={`${data.xp || 0} xp`} /><StatPill label="Questions this week" value={`${data.questionsThisWeek || 0}`} /><StatPill label="Topics mastered" value={`${data.masteredTopics || 0}`} /></section>
+        <section className="grid grid-cols-2 gap-3 sm:grid-cols-4"><StatPill label="Study streak" value={`${data.streak || 0} ${data.streak === 1 ? "day" : "days"}`} accent /><StatPill label="Earned XP" value={`${data.xp || 0} xp`} /><StatPill label="Questions this week" value={`${data.questionsThisWeek || 0}`} /><StatPill label="Topics mastered" value={`${data.masteredTopics || 0}`} /></section>
       </div>}
     </div>
   </AppShell>;
