@@ -9,7 +9,8 @@ type Mode = "sign-in" | "sign-up";
 export default function LoginPage() {
   const [, setLocation] = useLocation();
   const [mode, setMode] = useState<Mode>("sign-in");
-  const [fullName, setFullName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -31,11 +32,11 @@ export default function LoginPage() {
         const { data, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
-          options: { data: { full_name: fullName || undefined } },
+          options: { data: { first_name: firstName || undefined, last_name: lastName || undefined } },
         });
         if (signUpError) throw signUpError;
         if (data.session) {
-          setLocation("/");
+          setLocation("/onboarding");
         } else {
           setNotice("Check your email to confirm your account, then sign in.");
           setMode("sign-in");
@@ -79,18 +80,35 @@ export default function LoginPage() {
 
           <form onSubmit={submit} className="mt-7 space-y-4" data-testid="form-auth">
             {mode === "sign-up" && (
-              <div>
-                <label className="block text-[13px] font-semibold text-primary" htmlFor="fullName">
-                  Full name
-                </label>
-                <input
-                  id="fullName"
-                  value={fullName}
-                  onChange={(event) => setFullName(event.target.value)}
-                  placeholder="Alex Morgan"
-                  data-testid="input-full-name"
-                  className="form-input mt-2"
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[13px] font-semibold text-primary" htmlFor="firstName">
+                    First name
+                  </label>
+                  <input
+                    id="firstName"
+                    required
+                    value={firstName}
+                    onChange={(event) => setFirstName(event.target.value)}
+                    placeholder="Alex"
+                    data-testid="input-first-name"
+                    className="form-input mt-2"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[13px] font-semibold text-primary" htmlFor="lastName">
+                    Last name
+                  </label>
+                  <input
+                    id="lastName"
+                    required
+                    value={lastName}
+                    onChange={(event) => setLastName(event.target.value)}
+                    placeholder="Morgan"
+                    data-testid="input-last-name"
+                    className="form-input mt-2"
+                  />
+                </div>
               </div>
             )}
             <div>

@@ -14,6 +14,7 @@ RULES:
 - Adapt your depth and vocabulary to the student's apparent level.
 - Identify misconceptions gently and correct them clearly, without shaming the student.
 - Use the student's learning history (mastery, recent mistakes) to tailor your response when it's relevant.
+- Use the student's education level, year, and program to pitch depth and vocabulary appropriately — but never assume or invent specifics of their school's actual curriculum, syllabus, or course content unless it was provided to you directly.
 - Ground answers in the student's uploaded material when it's provided in context; if nothing relevant was retrieved, say so plainly instead of guessing.
 - Never claim to have read a document that wasn't provided to you.
 - Keep replies concise — a few short paragraphs at most, plus at most one follow-up question or prompt.
@@ -22,6 +23,9 @@ You will be given structured context about the student before their message. Use
 
 export type TutorContext = {
   fullName: string | null;
+  educationLevel: string | null;
+  gradeYear: string | null;
+  programMajor: string | null;
   courseId: string | null;
   courseName: string | null;
   topicName: string | null;
@@ -32,37 +36,43 @@ export type TutorContext = {
 
 export type TutorTurn = { role: "user" | "assistant"; content: string };
 
+/**
+ * Builds the tutor's context from real, explicit identifiers (a course id
+ * the student picked, a topic name within it) rather than parsing a free-text
+ * label — the previous approach broke silently whenever a course name
+ * contained the separator or didn't match exactly.
+ */
 export async function assembleContext(
   supabase: SupabaseClient,
   userId: string,
-  contextLabel: string | null | undefined,
+  courseId: string | null | undefined,
+  topicName: string | null | undefined,
 ): Promise<TutorContext> {
-  const [profileRes, coursesRes] = await Promise.all([
-    supabase.from("profiles").select("full_name").eq("id", userId).maybeSingle(),
-    supabase.from("courses").select("id, name").eq("user_id", userId),
+  const [profileRes, courseRes] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("full_name, education_level, grade_year, program_major")
+      .eq("id", userId)
+      .maybeSingle(),
+    courseId
+      ? supabase.from("courses").select("id, name").eq("id", courseId).maybeSingle()
+      : Promise.resolve({ data: null }),
   ]);
 
-  const fullName = profileRes.data?.full_name ?? null;
-
-  const [courseLabel, topicLabel] = (contextLabel ?? "").split("·").map((part) => part.trim());
-  const course = coursesRes.data?.find(
-    (c) => c.name.toLowerCase() === (courseLabel ?? "").toLowerCase(),
-  );
-
-  let topicName: string | null = topicLabel || null;
+  let resolvedTopicName: string | null = topicName ?? null;
   let masteryLevel: string | null = null;
   let masteryScore: number | null = null;
 
-  if (course) {
+  if (courseRes.data && topicName) {
     const { data: topic } = await supabase
       .from("topics")
-      .select("id, name, mastery_level, mastery_score")
-      .eq("course_id", course.id)
-      .ilike("name", topicLabel ?? "%")
+      .select("name, mastery_level, mastery_score")
+      .eq("course_id", courseRes.data.id)
+      .ilike("name", topicName)
       .maybeSingle();
 
     if (topic) {
-      topicName = topic.name;
+      resolvedTopicName = topic.name;
       masteryLevel = topic.mastery_level;
       masteryScore = Number(topic.mastery_score);
     }
@@ -77,10 +87,13 @@ export async function assembleContext(
     .limit(3);
 
   return {
-    fullName,
-    courseId: course?.id ?? null,
-    courseName: course?.name ?? courseLabel ?? null,
-    topicName,
+    fullName: profileRes.data?.full_name ?? null,
+    educationLevel: profileRes.data?.education_level ?? null,
+    gradeYear: profileRes.data?.grade_year ?? null,
+    programMajor: profileRes.data?.program_major ?? null,
+    courseId: courseRes.data?.id ?? null,
+    courseName: courseRes.data?.name ?? null,
+    topicName: resolvedTopicName,
     masteryLevel,
     masteryScore,
     recentMistakes: (mistakes ?? []).map((m) => m.question_text),
@@ -90,6 +103,8 @@ export async function assembleContext(
 function contextBlock(context: TutorContext, retrieval?: { hasDocuments: boolean; chunks: RetrievedChunk[] }): string {
   const lines = [
     context.fullName ? `Student: ${context.fullName}` : null,
+    context.educationLevel ? `Education level: ${context.educationLevel}${context.gradeYear ? ` (${context.gradeYear})` : ""}` : null,
+    context.programMajor ? `Program/major: ${context.programMajor}` : null,
     context.courseName ? `Course: ${context.courseName}` : null,
     context.topicName ? `Current topic: ${context.topicName}` : null,
     context.masteryLevel

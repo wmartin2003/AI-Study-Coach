@@ -8,6 +8,21 @@ export type GeneratedQuestion = {
   difficulty: "warm-up" | "core" | "stretch";
 };
 
+/**
+ * Fisher-Yates shuffle. The model tends to place the correct option in
+ * similar slots across questions, so we shuffle server-side before storing —
+ * grading compares against `correctAnswer` by text, not position, so this
+ * never risks a mismatch between the displayed order and the stored answer.
+ */
+function shuffle<T>(items: T[]): T[] {
+  const result = [...items];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
 export async function generateQuizQuestions(options: {
   courseName: string;
   topicName: string;
@@ -43,5 +58,5 @@ export async function generateQuizQuestions(options: {
     },
   });
 
-  return result.questions;
+  return result.questions.map((question) => ({ ...question, options: shuffle(question.options) }));
 }

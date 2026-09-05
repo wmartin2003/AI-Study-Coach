@@ -3,7 +3,10 @@ import Anthropic from "@anthropic-ai/sdk";
 const apiKey = process.env["ANTHROPIC_API_KEY"];
 if (!apiKey) throw new Error("ANTHROPIC_API_KEY is required but was not provided.");
 
-export const anthropic = new Anthropic({ apiKey });
+// An explicit, bounded timeout so a slow/hung upstream call fails fast with
+// our own friendly error message instead of leaving the user staring at a
+// spinner for the SDK's much longer default timeout.
+export const anthropic = new Anthropic({ apiKey, timeout: 45_000, maxRetries: 2 });
 export const TUTOR_MODEL = "claude-sonnet-5";
 
 /**

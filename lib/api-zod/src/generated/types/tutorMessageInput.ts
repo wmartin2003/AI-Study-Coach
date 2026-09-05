@@ -10,7 +10,9 @@ export interface TutorMessageInput {
   /** @minLength 1 */
   message: string;
   /** @nullable */
-  context?: string | null;
+  courseId?: string | null;
+  /** @nullable */
+  topicName?: string | null;
   /** @nullable */
   conversationId?: string | null;
 }

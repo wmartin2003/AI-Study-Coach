@@ -12,6 +12,15 @@ function isZodError(err: unknown): err is { name: "ZodError"; issues: ZodIssueLi
   );
 }
 
+function isMulterError(err: unknown): err is { name: "MulterError"; code: string } {
+  return typeof err === "object" && err !== null && (err as { name?: unknown }).name === "MulterError";
+}
+
+const MULTER_ERROR_MESSAGES: Record<string, string> = {
+  LIMIT_FILE_SIZE: "That file is too large. Please upload something under 20 MB.",
+  LIMIT_UNEXPECTED_FILE: "That upload wasn't in the format we expected. Please try again.",
+};
+
 /**
  * Registered after all routes. Express 5 forwards both sync throws and
  * rejected promises from async handlers here automatically, so this is the
@@ -24,6 +33,11 @@ export function errorHandler(err: unknown, req: Request, res: Response, _next: N
       error: "Invalid request",
       details: err.issues.map((issue) => ({ path: issue.path.join("."), message: issue.message })),
     });
+    return;
+  }
+
+  if (isMulterError(err)) {
+    res.status(413).json({ error: MULTER_ERROR_MESSAGES[err.code] ?? "That upload couldn't be processed. Please try again." });
     return;
   }
 
