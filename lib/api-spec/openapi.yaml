@@ -60,6 +60,11 @@ paths:
       operationId: getTutorConversation
       tags: [study]
       summary: Get the student's most recent tutor conversation
+      parameters:
+        - name: courseId
+          in: query
+          required: false
+          schema: { type: string }
       responses:
         "200":
           description: Conversation history
@@ -84,6 +89,11 @@ paths:
       operationId: listCourses
       tags: [study]
       summary: List study courses
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema: { type: string }
       responses:
         "200":
           description: Courses
@@ -110,6 +120,276 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Course"
+  /courses/{courseId}:
+    patch:
+      operationId: updateCourse
+      tags: [study]
+      summary: Update a course's details
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CourseUpdateInput"
+      responses:
+        "200":
+          description: Updated course
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Course"
+  /courses/{courseId}/complete:
+    post:
+      operationId: completeCourse
+      tags: [study]
+      summary: Mark a course as completed and award a completion badge
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Completed course
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Course"
+  /courses/{courseId}/archive:
+    post:
+      operationId: archiveCourse
+      tags: [study]
+      summary: Archive a course
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Archived course
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Course"
+  /courses/{courseId}/reactivate:
+    post:
+      operationId: reactivateCourse
+      tags: [study]
+      summary: Reactivate a completed or archived course
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Reactivated course
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Course"
+  /courses/{courseId}/documents:
+    get:
+      operationId: listCourseDocuments
+      tags: [study]
+      summary: List documents attached to a course
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Documents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DocumentSummary"
+  /documents/{documentId}:
+    patch:
+      operationId: updateDocument
+      tags: [study]
+      summary: Rename or reclassify a document
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DocumentUpdateInput"
+      responses:
+        "200":
+          description: Updated document
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentSummary"
+    delete:
+      operationId: deleteDocument
+      tags: [study]
+      summary: Delete a document
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "204":
+          description: Deleted
+  /documents/{documentId}/url:
+    get:
+      operationId: getDocumentUrl
+      tags: [study]
+      summary: Get a temporary download URL for a document
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Signed URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentUrl"
+  /documents/{documentId}/extract:
+    post:
+      operationId: extractSyllabus
+      tags: [study]
+      summary: Extract topics and dates from a syllabus document
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Extraction result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyllabusExtraction"
+  /documents/{documentId}/confirm-extraction:
+    post:
+      operationId: confirmExtraction
+      tags: [study]
+      summary: Confirm (possibly edited) syllabus extraction results and apply them
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SyllabusExtraction"
+      responses:
+        "200":
+          description: Applied extraction
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExtractionApplyResult"
+  /events:
+    get:
+      operationId: listEvents
+      tags: [study]
+      summary: List upcoming course events, optionally scoped to one course
+      parameters:
+        - name: courseId
+          in: query
+          required: false
+          schema: { type: string }
+      responses:
+        "200":
+          description: Events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CourseEvent"
+    post:
+      operationId: createEvent
+      tags: [study]
+      summary: Add a calendar event to a course
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CourseEventInput"
+      responses:
+        "201":
+          description: Event created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourseEvent"
+  /events/{eventId}:
+    patch:
+      operationId: updateEvent
+      tags: [study]
+      summary: Edit a calendar event
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CourseEventInput"
+      responses:
+        "200":
+          description: Updated event
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourseEvent"
+    delete:
+      operationId: deleteEvent
+      tags: [study]
+      summary: Delete a calendar event
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "204":
+          description: Deleted
+  /achievements:
+    get:
+      operationId: listAchievements
+      tags: [study]
+      summary: List the student's earned badges
+      responses:
+        "200":
+          description: Achievements
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Achievement"
   /tutor/messages:
     post:
       operationId: sendTutorMessage
@@ -173,17 +453,33 @@ components:
       properties:
         id: { type: string }
         fullName: { type: ["string", "null"] }
+        firstName: { type: ["string", "null"] }
+        lastName: { type: ["string", "null"] }
         gradeLevel: { type: ["string", "null"] }
         studyMinutesPerDay: { type: ["number", "null"] }
         learningStyle: { type: ["string", "null"] }
+        country: { type: ["string", "null"] }
+        educationLevel: { type: ["string", "null"] }
+        institutionName: { type: ["string", "null"] }
+        programMajor: { type: ["string", "null"] }
+        gradeYear: { type: ["string", "null"] }
+        expectedCompletionDate: { type: ["string", "null"] }
         onboardingCompleted: { type: boolean }
     ProfileInput:
       type: object
       properties:
         fullName: { type: string }
+        firstName: { type: string }
+        lastName: { type: string }
         gradeLevel: { type: string }
         studyMinutesPerDay: { type: number }
         learningStyle: { type: string }
+        country: { type: string }
+        educationLevel: { type: string }
+        institutionName: { type: string }
+        programMajor: { type: string }
+        gradeYear: { type: string }
+        expectedCompletionDate: { type: string }
         onboardingCompleted: { type: boolean }
     ConversationMessage:
       type: object
@@ -208,23 +504,43 @@ components:
         masteryScore: { type: number }
     Course:
       type: object
-      required: [id, name, examDate, level, progress, topics]
+      required: [id, name, completionDate, level, status, progress, topics]
       properties:
         id: { type: string }
         name: { type: string }
-        examDate: { type: string }
+        completionDate: { type: ["string", "null"] }
         level: { type: string }
+        status: { type: string }
+        courseCode: { type: ["string", "null"] }
+        institution: { type: ["string", "null"] }
+        instructor: { type: ["string", "null"] }
+        term: { type: ["string", "null"] }
+        completedAt: { type: ["string", "null"] }
         progress: { type: number }
         topics:
           type: array
           items: { $ref: "#/components/schemas/CourseTopic" }
     CourseInput:
       type: object
-      required: [name, examDate, level]
+      required: [name]
       properties:
         name: { type: string, minLength: 1 }
-        examDate: { type: string, minLength: 1 }
-        level: { type: string, minLength: 1 }
+        completionDate: { type: string }
+        level: { type: string }
+        courseCode: { type: string }
+        institution: { type: string }
+        instructor: { type: string }
+        term: { type: string }
+    CourseUpdateInput:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        completionDate: { type: string }
+        level: { type: string }
+        courseCode: { type: string }
+        institution: { type: string }
+        instructor: { type: string }
+        term: { type: string }
     StudyTask:
       type: object
       required: [label, duration, kind, completed]
@@ -233,15 +549,25 @@ components:
         duration: { type: string }
         kind: { type: string }
         completed: { type: boolean }
+    UpcomingEvent:
+      type: object
+      required: [id, courseName, type, title, eventDate]
+      properties:
+        id: { type: string }
+        courseName: { type: string }
+        type: { type: string }
+        title: { type: string }
+        eventDate: { type: string }
     Dashboard:
       type: object
-      required: [greeting, courseName, courseProgress, strongestTopic, focusTopic, tasks, xp, streak, questionsThisWeek, masteredTopics]
+      required: [greeting, courseName, courseProgress, strongestTopic, focusTopic, focusReason, tasks, xp, streak, questionsThisWeek, masteredTopics, upcomingEvents]
       properties:
         greeting: { type: string }
         courseName: { type: string }
         courseProgress: { type: number }
         strongestTopic: { type: string }
         focusTopic: { type: string }
+        focusReason: { type: string }
         tasks:
           type: array
           items: { $ref: "#/components/schemas/StudyTask" }
@@ -249,12 +575,16 @@ components:
         streak: { type: number }
         questionsThisWeek: { type: number }
         masteredTopics: { type: number }
+        upcomingEvents:
+          type: array
+          items: { $ref: "#/components/schemas/UpcomingEvent" }
     TutorMessageInput:
       type: object
       required: [message]
       properties:
         message: { type: string, minLength: 1 }
-        context: { type: ["string", "null"] }
+        courseId: { type: ["string", "null"] }
+        topicName: { type: ["string", "null"] }
         conversationId: { type: ["string", "null"] }
     TutorMessage:
       type: object
@@ -291,4 +621,91 @@ components:
         explanation: { type: string }
         xp: { type: number }
         nextTopic: { type: string }
-
+    DocumentSummary:
+      type: object
+      required: [id, fileName, documentType, status, createdAt]
+      properties:
+        id: { type: string }
+        fileName: { type: string }
+        documentType: { type: string }
+        status: { type: string }
+        createdAt: { type: string }
+        sizeBytes: { type: ["number", "null"] }
+    DocumentUpdateInput:
+      type: object
+      properties:
+        fileName: { type: string }
+        documentType: { type: string }
+    DocumentUrl:
+      type: object
+      required: [url]
+      properties:
+        url: { type: string }
+    ExtractedTopic:
+      type: object
+      required: [name, confidence]
+      properties:
+        name: { type: string }
+        confidence: { type: string }
+    ExtractedEvent:
+      type: object
+      required: [type, title, eventDate, confidence]
+      properties:
+        type: { type: string }
+        title: { type: string }
+        eventDate: { type: ["string", "null"] }
+        confidence: { type: string }
+    SyllabusExtraction:
+      type: object
+      required: [confidence, courseName, courseCode, instructor, term, topics, events]
+      properties:
+        confidence: { type: string }
+        courseName: { type: ["string", "null"] }
+        courseCode: { type: ["string", "null"] }
+        instructor: { type: ["string", "null"] }
+        term: { type: ["string", "null"] }
+        topics:
+          type: array
+          items: { $ref: "#/components/schemas/ExtractedTopic" }
+        events:
+          type: array
+          items: { $ref: "#/components/schemas/ExtractedEvent" }
+    ExtractionApplyResult:
+      type: object
+      required: [topicsCreated, eventsCreated]
+      properties:
+        topicsCreated: { type: number }
+        eventsCreated: { type: number }
+    CourseEvent:
+      type: object
+      required: [id, courseId, courseName, type, title, eventDate, source]
+      properties:
+        id: { type: string }
+        courseId: { type: string }
+        courseName: { type: string }
+        type: { type: string }
+        title: { type: string }
+        eventDate: { type: string }
+        description: { type: ["string", "null"] }
+        source: { type: string }
+    CourseEventInput:
+      type: object
+      required: [courseId, type, title, eventDate]
+      properties:
+        courseId: { type: string }
+        type: { type: string }
+        title: { type: string, minLength: 1 }
+        eventDate: { type: string, minLength: 1 }
+        description: { type: string }
+    Achievement:
+      type: object
+      required: [id, key, title, description, courseName, courseCode, earnedAt]
+      properties:
+        id: { type: string }
+        key: { type: string }
+        title: { type: string }
+        description: { type: ["string", "null"] }
+        courseName: { type: ["string", "null"] }
+        courseCode: { type: ["string", "null"] }
+        earnedAt: { type: string }
+        masteryAtCompletion: { type: ["number", "null"] }

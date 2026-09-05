@@ -8,8 +8,16 @@
 
 export interface ProfileInput {
   fullName?: string;
+  firstName?: string;
+  lastName?: string;
   gradeLevel?: string;
   studyMinutesPerDay?: number;
   learningStyle?: string;
+  country?: string;
+  educationLevel?: string;
+  institutionName?: string;
+  programMajor?: string;
+  gradeYear?: string;
+  expectedCompletionDate?: string;
   onboardingCompleted?: boolean;
 }

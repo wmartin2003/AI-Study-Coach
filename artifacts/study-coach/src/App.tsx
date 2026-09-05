@@ -1,5 +1,6 @@
 import { type ReactElement, type ReactNode, useEffect } from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "@/lib/query-client";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,13 +10,14 @@ import CoursePage from "@/pages/course";
 import TutorPage from "@/pages/tutor";
 import QuizPage from "@/pages/quiz";
 import NewCoursePage from "@/pages/new-course";
+import OnboardingPage from "@/pages/onboarding";
+import AchievementsPage from "@/pages/achievements";
 import LoginPage from "@/pages/login";
 import { AuthProvider, useAuth } from "@/lib/auth-context";
+import { getGetProfileQueryKey, useGetProfile } from "@workspace/api-client-react";
 import { Route, Switch, useLocation, Router as WouterRouter } from "wouter";
 
-const queryClient = new QueryClient();
-
-function ProtectedRoute({ component: Component }: { component: () => ReactElement }) {
+function RequireAuth({ children }: { children: ReactNode }) {
   const { session, loading } = useAuth();
   const [, setLocation] = useLocation();
 
@@ -23,9 +25,26 @@ function ProtectedRoute({ component: Component }: { component: () => ReactElemen
     if (!loading && !session) setLocation("/login");
   }, [loading, session, setLocation]);
 
-  if (loading) return null;
-  if (!session) return null;
-  return <Component />;
+  if (loading || !session) return null;
+  return <>{children}</>;
+}
+
+function ProtectedRoute({ component: Component }: { component: () => ReactElement }) {
+  const { session } = useAuth();
+  const [, setLocation] = useLocation();
+  const profileQuery = useGetProfile({
+    query: { queryKey: getGetProfileQueryKey(), enabled: !!session },
+  });
+
+  useEffect(() => {
+    if (profileQuery.data && !profileQuery.data.onboardingCompleted) setLocation("/onboarding");
+  }, [profileQuery.data, setLocation]);
+
+  return (
+    <RequireAuth>
+      {profileQuery.data && !profileQuery.data.onboardingCompleted ? null : <Component />}
+    </RequireAuth>
+  );
 }
 
 function Router() {
@@ -42,10 +61,12 @@ function Router() {
     <RoutedErrorBoundary>
       <Switch>
         <Route path="/login" component={LoginPage} />
+        <Route path="/onboarding" component={() => <RequireAuth><OnboardingPage /></RequireAuth>} />
         <Route path="/" component={() => <ProtectedRoute component={DashboardPage} />} />
         <Route path="/course" component={() => <ProtectedRoute component={CoursePage} />} />
         <Route path="/tutor" component={() => <ProtectedRoute component={TutorPage} />} />
         <Route path="/quiz" component={() => <ProtectedRoute component={QuizPage} />} />
+        <Route path="/achievements" component={() => <ProtectedRoute component={AchievementsPage} />} />
         <Route path="/courses/new" component={() => <ProtectedRoute component={NewCoursePage} />} />
         <Route component={NotFound} />
       </Switch>

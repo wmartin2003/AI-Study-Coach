@@ -6,18 +6,33 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './achievement';
 export * from './conversationHistory';
 export * from './conversationMessage';
 export * from './course';
+export * from './courseEvent';
+export * from './courseEventInput';
 export * from './courseInput';
 export * from './courseTopic';
+export * from './courseUpdateInput';
 export * from './dashboard';
+export * from './documentSummary';
+export * from './documentUpdateInput';
+export * from './documentUrl';
+export * from './extractedEvent';
+export * from './extractedTopic';
+export * from './extractionApplyResult';
+export * from './getTutorConversationParams';
 export * from './healthStatus';
+export * from './listCoursesParams';
+export * from './listEventsParams';
 export * from './profile';
 export * from './profileInput';
 export * from './quizAnswerInput';
 export * from './quizFeedback';
 export * from './quizQuestion';
 export * from './studyTask';
+export * from './syllabusExtraction';
 export * from './tutorMessage';
 export * from './tutorMessageInput';
+export * from './upcomingEvent';

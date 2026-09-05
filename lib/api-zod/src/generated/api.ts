@@ -23,9 +23,17 @@ export const HealthCheckResponse = zod.object({
 export const GetProfileResponse = zod.object({
   "id": zod.string(),
   "fullName": zod.string().nullable(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
   "gradeLevel": zod.string().nullish(),
   "studyMinutesPerDay": zod.number().nullish(),
   "learningStyle": zod.string().nullish(),
+  "country": zod.string().nullish(),
+  "educationLevel": zod.string().nullish(),
+  "institutionName": zod.string().nullish(),
+  "programMajor": zod.string().nullish(),
+  "gradeYear": zod.string().nullish(),
+  "expectedCompletionDate": zod.string().nullish(),
   "onboardingCompleted": zod.boolean()
 })
 
@@ -35,18 +43,34 @@ export const GetProfileResponse = zod.object({
  */
 export const UpdateProfileBody = zod.object({
   "fullName": zod.string().optional(),
+  "firstName": zod.string().optional(),
+  "lastName": zod.string().optional(),
   "gradeLevel": zod.string().optional(),
   "studyMinutesPerDay": zod.number().optional(),
   "learningStyle": zod.string().optional(),
+  "country": zod.string().optional(),
+  "educationLevel": zod.string().optional(),
+  "institutionName": zod.string().optional(),
+  "programMajor": zod.string().optional(),
+  "gradeYear": zod.string().optional(),
+  "expectedCompletionDate": zod.string().optional(),
   "onboardingCompleted": zod.boolean().optional()
 })
 
 export const UpdateProfileResponse = zod.object({
   "id": zod.string(),
   "fullName": zod.string().nullable(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
   "gradeLevel": zod.string().nullish(),
   "studyMinutesPerDay": zod.number().nullish(),
   "learningStyle": zod.string().nullish(),
+  "country": zod.string().nullish(),
+  "educationLevel": zod.string().nullish(),
+  "institutionName": zod.string().nullish(),
+  "programMajor": zod.string().nullish(),
+  "gradeYear": zod.string().nullish(),
+  "expectedCompletionDate": zod.string().nullish(),
   "onboardingCompleted": zod.boolean()
 })
 
@@ -54,6 +78,10 @@ export const UpdateProfileResponse = zod.object({
 /**
  * @summary Get the student's most recent tutor conversation
  */
+export const GetTutorConversationQueryParams = zod.object({
+  "courseId": zod.coerce.string().optional()
+})
+
 export const GetTutorConversationResponse = zod.object({
   "conversationId": zod.string().nullable(),
   "messages": zod.array(zod.object({
@@ -72,6 +100,7 @@ export const GetDashboardResponse = zod.object({
   "courseProgress": zod.number(),
   "strongestTopic": zod.string(),
   "focusTopic": zod.string(),
+  "focusReason": zod.string(),
   "tasks": zod.array(zod.object({
   "label": zod.string(),
   "duration": zod.string(),
@@ -81,18 +110,35 @@ export const GetDashboardResponse = zod.object({
   "xp": zod.number(),
   "streak": zod.number(),
   "questionsThisWeek": zod.number(),
-  "masteredTopics": zod.number()
+  "masteredTopics": zod.number(),
+  "upcomingEvents": zod.array(zod.object({
+  "id": zod.string(),
+  "courseName": zod.string(),
+  "type": zod.string(),
+  "title": zod.string(),
+  "eventDate": zod.string()
+}))
 })
 
 
 /**
  * @summary List study courses
  */
+export const ListCoursesQueryParams = zod.object({
+  "status": zod.coerce.string().optional()
+})
+
 export const ListCoursesResponseItem = zod.object({
   "id": zod.string(),
   "name": zod.string(),
-  "examDate": zod.string(),
+  "completionDate": zod.string().nullable(),
   "level": zod.string(),
+  "status": zod.string(),
+  "courseCode": zod.string().nullish(),
+  "institution": zod.string().nullish(),
+  "instructor": zod.string().nullish(),
+  "term": zod.string().nullish(),
+  "completedAt": zod.string().nullish(),
   "progress": zod.number(),
   "topics": zod.array(zod.object({
   "name": zod.string(),
@@ -109,19 +155,27 @@ export const ListCoursesResponse = zod.array(ListCoursesResponseItem)
 
 
 
-
-
 export const CreateCourseBody = zod.object({
   "name": zod.string().min(1),
-  "examDate": zod.string().min(1),
-  "level": zod.string().min(1)
+  "completionDate": zod.string().optional(),
+  "level": zod.string().optional(),
+  "courseCode": zod.string().optional(),
+  "institution": zod.string().optional(),
+  "instructor": zod.string().optional(),
+  "term": zod.string().optional()
 })
 
 export const CreateCourseResponse = zod.object({
   "id": zod.string(),
   "name": zod.string(),
-  "examDate": zod.string(),
+  "completionDate": zod.string().nullable(),
   "level": zod.string(),
+  "status": zod.string(),
+  "courseCode": zod.string().nullish(),
+  "institution": zod.string().nullish(),
+  "instructor": zod.string().nullish(),
+  "term": zod.string().nullish(),
+  "completedAt": zod.string().nullish(),
   "progress": zod.number(),
   "topics": zod.array(zod.object({
   "name": zod.string(),
@@ -132,6 +186,350 @@ export const CreateCourseResponse = zod.object({
 
 
 /**
+ * @summary Update a course's details
+ */
+export const UpdateCourseParams = zod.object({
+  "courseId": zod.coerce.string()
+})
+
+
+
+
+export const UpdateCourseBody = zod.object({
+  "name": zod.string().min(1).optional(),
+  "completionDate": zod.string().optional(),
+  "level": zod.string().optional(),
+  "courseCode": zod.string().optional(),
+  "institution": zod.string().optional(),
+  "instructor": zod.string().optional(),
+  "term": zod.string().optional()
+})
+
+export const UpdateCourseResponse = zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "completionDate": zod.string().nullable(),
+  "level": zod.string(),
+  "status": zod.string(),
+  "courseCode": zod.string().nullish(),
+  "institution": zod.string().nullish(),
+  "instructor": zod.string().nullish(),
+  "term": zod.string().nullish(),
+  "completedAt": zod.string().nullish(),
+  "progress": zod.number(),
+  "topics": zod.array(zod.object({
+  "name": zod.string(),
+  "masteryLevel": zod.string(),
+  "masteryScore": zod.number()
+}))
+})
+
+
+/**
+ * @summary Mark a course as completed and award a completion badge
+ */
+export const CompleteCourseParams = zod.object({
+  "courseId": zod.coerce.string()
+})
+
+export const CompleteCourseResponse = zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "completionDate": zod.string().nullable(),
+  "level": zod.string(),
+  "status": zod.string(),
+  "courseCode": zod.string().nullish(),
+  "institution": zod.string().nullish(),
+  "instructor": zod.string().nullish(),
+  "term": zod.string().nullish(),
+  "completedAt": zod.string().nullish(),
+  "progress": zod.number(),
+  "topics": zod.array(zod.object({
+  "name": zod.string(),
+  "masteryLevel": zod.string(),
+  "masteryScore": zod.number()
+}))
+})
+
+
+/**
+ * @summary Archive a course
+ */
+export const ArchiveCourseParams = zod.object({
+  "courseId": zod.coerce.string()
+})
+
+export const ArchiveCourseResponse = zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "completionDate": zod.string().nullable(),
+  "level": zod.string(),
+  "status": zod.string(),
+  "courseCode": zod.string().nullish(),
+  "institution": zod.string().nullish(),
+  "instructor": zod.string().nullish(),
+  "term": zod.string().nullish(),
+  "completedAt": zod.string().nullish(),
+  "progress": zod.number(),
+  "topics": zod.array(zod.object({
+  "name": zod.string(),
+  "masteryLevel": zod.string(),
+  "masteryScore": zod.number()
+}))
+})
+
+
+/**
+ * @summary Reactivate a completed or archived course
+ */
+export const ReactivateCourseParams = zod.object({
+  "courseId": zod.coerce.string()
+})
+
+export const ReactivateCourseResponse = zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "completionDate": zod.string().nullable(),
+  "level": zod.string(),
+  "status": zod.string(),
+  "courseCode": zod.string().nullish(),
+  "institution": zod.string().nullish(),
+  "instructor": zod.string().nullish(),
+  "term": zod.string().nullish(),
+  "completedAt": zod.string().nullish(),
+  "progress": zod.number(),
+  "topics": zod.array(zod.object({
+  "name": zod.string(),
+  "masteryLevel": zod.string(),
+  "masteryScore": zod.number()
+}))
+})
+
+
+/**
+ * @summary List documents attached to a course
+ */
+export const ListCourseDocumentsParams = zod.object({
+  "courseId": zod.coerce.string()
+})
+
+export const ListCourseDocumentsResponseItem = zod.object({
+  "id": zod.string(),
+  "fileName": zod.string(),
+  "documentType": zod.string(),
+  "status": zod.string(),
+  "createdAt": zod.string(),
+  "sizeBytes": zod.number().nullish()
+})
+export const ListCourseDocumentsResponse = zod.array(ListCourseDocumentsResponseItem)
+
+
+/**
+ * @summary Rename or reclassify a document
+ */
+export const UpdateDocumentParams = zod.object({
+  "documentId": zod.coerce.string()
+})
+
+export const UpdateDocumentBody = zod.object({
+  "fileName": zod.string().optional(),
+  "documentType": zod.string().optional()
+})
+
+export const UpdateDocumentResponse = zod.object({
+  "id": zod.string(),
+  "fileName": zod.string(),
+  "documentType": zod.string(),
+  "status": zod.string(),
+  "createdAt": zod.string(),
+  "sizeBytes": zod.number().nullish()
+})
+
+
+/**
+ * @summary Delete a document
+ */
+export const DeleteDocumentParams = zod.object({
+  "documentId": zod.coerce.string()
+})
+
+export const DeleteDocumentResponse = zod.void()
+
+
+/**
+ * @summary Get a temporary download URL for a document
+ */
+export const GetDocumentUrlParams = zod.object({
+  "documentId": zod.coerce.string()
+})
+
+export const GetDocumentUrlResponse = zod.object({
+  "url": zod.string()
+})
+
+
+/**
+ * @summary Extract topics and dates from a syllabus document
+ */
+export const ExtractSyllabusParams = zod.object({
+  "documentId": zod.coerce.string()
+})
+
+export const ExtractSyllabusResponse = zod.object({
+  "confidence": zod.string(),
+  "courseName": zod.string().nullable(),
+  "courseCode": zod.string().nullable(),
+  "instructor": zod.string().nullable(),
+  "term": zod.string().nullable(),
+  "topics": zod.array(zod.object({
+  "name": zod.string(),
+  "confidence": zod.string()
+})),
+  "events": zod.array(zod.object({
+  "type": zod.string(),
+  "title": zod.string(),
+  "eventDate": zod.string().nullable(),
+  "confidence": zod.string()
+}))
+})
+
+
+/**
+ * @summary Confirm (possibly edited) syllabus extraction results and apply them
+ */
+export const ConfirmExtractionParams = zod.object({
+  "documentId": zod.coerce.string()
+})
+
+export const ConfirmExtractionBody = zod.object({
+  "confidence": zod.string(),
+  "courseName": zod.string().nullable(),
+  "courseCode": zod.string().nullable(),
+  "instructor": zod.string().nullable(),
+  "term": zod.string().nullable(),
+  "topics": zod.array(zod.object({
+  "name": zod.string(),
+  "confidence": zod.string()
+})),
+  "events": zod.array(zod.object({
+  "type": zod.string(),
+  "title": zod.string(),
+  "eventDate": zod.string().nullable(),
+  "confidence": zod.string()
+}))
+})
+
+export const ConfirmExtractionResponse = zod.object({
+  "topicsCreated": zod.number(),
+  "eventsCreated": zod.number()
+})
+
+
+/**
+ * @summary List upcoming course events, optionally scoped to one course
+ */
+export const ListEventsQueryParams = zod.object({
+  "courseId": zod.coerce.string().optional()
+})
+
+export const ListEventsResponseItem = zod.object({
+  "id": zod.string(),
+  "courseId": zod.string(),
+  "courseName": zod.string(),
+  "type": zod.string(),
+  "title": zod.string(),
+  "eventDate": zod.string(),
+  "description": zod.string().nullish(),
+  "source": zod.string()
+})
+export const ListEventsResponse = zod.array(ListEventsResponseItem)
+
+
+/**
+ * @summary Add a calendar event to a course
+ */
+
+
+
+
+export const CreateEventBody = zod.object({
+  "courseId": zod.string(),
+  "type": zod.string(),
+  "title": zod.string().min(1),
+  "eventDate": zod.string().min(1),
+  "description": zod.string().optional()
+})
+
+export const CreateEventResponse = zod.object({
+  "id": zod.string(),
+  "courseId": zod.string(),
+  "courseName": zod.string(),
+  "type": zod.string(),
+  "title": zod.string(),
+  "eventDate": zod.string(),
+  "description": zod.string().nullish(),
+  "source": zod.string()
+})
+
+
+/**
+ * @summary Edit a calendar event
+ */
+export const UpdateEventParams = zod.object({
+  "eventId": zod.coerce.string()
+})
+
+
+
+
+
+export const UpdateEventBody = zod.object({
+  "courseId": zod.string(),
+  "type": zod.string(),
+  "title": zod.string().min(1),
+  "eventDate": zod.string().min(1),
+  "description": zod.string().optional()
+})
+
+export const UpdateEventResponse = zod.object({
+  "id": zod.string(),
+  "courseId": zod.string(),
+  "courseName": zod.string(),
+  "type": zod.string(),
+  "title": zod.string(),
+  "eventDate": zod.string(),
+  "description": zod.string().nullish(),
+  "source": zod.string()
+})
+
+
+/**
+ * @summary Delete a calendar event
+ */
+export const DeleteEventParams = zod.object({
+  "eventId": zod.coerce.string()
+})
+
+export const DeleteEventResponse = zod.void()
+
+
+/**
+ * @summary List the student's earned badges
+ */
+export const ListAchievementsResponseItem = zod.object({
+  "id": zod.string(),
+  "key": zod.string(),
+  "title": zod.string(),
+  "description": zod.string().nullable(),
+  "courseName": zod.string().nullable(),
+  "courseCode": zod.string().nullable(),
+  "earnedAt": zod.string(),
+  "masteryAtCompletion": zod.number().nullish()
+})
+export const ListAchievementsResponse = zod.array(ListAchievementsResponseItem)
+
+
+/**
  * @summary Ask the AI tutor a question
  */
 
@@ -139,7 +537,8 @@ export const CreateCourseResponse = zod.object({
 
 export const SendTutorMessageBody = zod.object({
   "message": zod.string().min(1),
-  "context": zod.string().nullish(),
+  "courseId": zod.string().nullish(),
+  "topicName": zod.string().nullish(),
   "conversationId": zod.string().nullish()
 })
 

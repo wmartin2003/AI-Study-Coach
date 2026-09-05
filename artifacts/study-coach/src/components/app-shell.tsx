@@ -1,4 +1,4 @@
-import { BookOpen, Brain, CalendarDays, ChevronRight, LayoutDashboard, Library, ListChecks, LogOut, Menu, Plus, Sparkles, X } from "lucide-react";
+import { Award, BookOpen, Brain, CalendarDays, ChevronRight, LayoutDashboard, Library, ListChecks, LogOut, Menu, Plus, Sparkles, X } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/lib/auth-context";
@@ -8,6 +8,7 @@ const navItems = [
   { href: "/course", label: "Course workspace", icon: Library },
   { href: "/tutor", label: "Ask your tutor", icon: Brain },
   { href: "/quiz", label: "Adaptive quiz", icon: ListChecks },
+  { href: "/achievements", label: "Achievements", icon: Award },
 ];
 
 export function BrandMark() {
@@ -81,11 +82,11 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
       <div className="lg:pl-[246px]">
         <header className="sticky top-0 z-10 flex h-[68px] items-center justify-between border-b border-border/70 bg-background/90 px-5 backdrop-blur-md sm:px-8 lg:hidden">
-          <button type="button" onClick={() => setMenuOpen(true)} data-testid="button-open-menu" className="rounded-xl p-2 text-muted-foreground hover:bg-muted"><Menu className="h-5 w-5" /></button>
+          <button type="button" onClick={() => setMenuOpen(true)} aria-label="Open menu" data-testid="button-open-menu" className="rounded-xl p-2 text-muted-foreground hover:bg-muted"><Menu className="h-5 w-5" /></button>
           <BrandMark />
-          <Link href="/tutor" data-testid="link-mobile-tutor" className="rounded-xl p-2 text-primary hover:bg-muted"><Brain className="h-5 w-5" /></Link>
+          <Link href="/tutor" aria-label="Ask your tutor" data-testid="link-mobile-tutor" className="rounded-xl p-2 text-primary hover:bg-muted"><Brain className="h-5 w-5" /></Link>
         </header>
-        {menuOpen && <div className="fixed inset-0 z-40 lg:hidden"><button type="button" aria-label="Close menu" onClick={() => setMenuOpen(false)} data-testid="button-close-menu" className="absolute inset-0 bg-primary/25 backdrop-blur-[2px]" /><aside className="relative h-full w-[280px] bg-sidebar text-sidebar-foreground shadow-2xl"><button type="button" onClick={() => setMenuOpen(false)} data-testid="button-dismiss-menu" className="absolute right-4 top-5 rounded-lg p-1.5 text-sidebar-foreground/60 hover:bg-sidebar-accent"><X className="h-4 w-4" /></button><SidebarContent onNavigate={() => setMenuOpen(false)} /></aside></div>}
+        {menuOpen && <div className="fixed inset-0 z-40 lg:hidden"><button type="button" aria-label="Close menu" onClick={() => setMenuOpen(false)} data-testid="button-close-menu" className="absolute inset-0 bg-primary/25 backdrop-blur-[2px]" /><aside className="relative h-full w-[280px] bg-sidebar text-sidebar-foreground shadow-2xl"><button type="button" aria-label="Close menu" onClick={() => setMenuOpen(false)} data-testid="button-dismiss-menu" className="absolute right-4 top-5 rounded-lg p-1.5 text-sidebar-foreground/60 hover:bg-sidebar-accent"><X className="h-4 w-4" /></button><SidebarContent onNavigate={() => setMenuOpen(false)} /></aside></div>}
         <main className="mx-auto max-w-[1450px] px-5 py-8 sm:px-8 lg:px-12 lg:py-10">{children}</main>
       </div>
     </div>

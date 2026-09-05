@@ -1,9 +1,10 @@
-import { ArrowRight, BookOpen, Check, Clock3, Lightbulb, Plus, Target, Trophy, Zap } from "lucide-react";
+import { ArrowRight, BookOpen, Calendar, Check, Clock3, Lightbulb, Plus, Target, Trophy, Zap } from "lucide-react";
 import { useMemo } from "react";
 import { Link } from "wouter";
 import { getGetDashboardQueryKey, useGetDashboard } from "@workspace/api-client-react";
 import type { Dashboard } from "@workspace/api-client-react";
 import { AppShell, Button, EmptyState, ErrorNotice, PageHeading, ProgressBar, SkeletonBlock, StatPill } from "@/components/app-shell";
+import { formatDate } from "@/lib/format";
 
 export default function DashboardPage() {
   const dashboardQuery = useGetDashboard({ query: { queryKey: getGetDashboardQueryKey() } });
@@ -42,10 +43,26 @@ export default function DashboardPage() {
           </section>
           <section className="rounded-[22px] border border-border bg-card p-5 sm:p-6">
             <div className="mb-5 flex items-center gap-2"><div className="flex h-8 w-8 items-center justify-center rounded-xl bg-accent/25 text-primary"><Target className="h-4 w-4" /></div><div><p className="font-mono-ui text-[10px] uppercase tracking-[0.16em] text-muted-foreground">A gentle focus</p><h2 className="mt-0.5 font-display text-xl font-semibold text-primary">Build this next</h2></div></div>
-            <div className="rounded-2xl bg-secondary/70 p-4"><p className="font-mono-ui text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Focus topic</p><p className="mt-2 font-display text-[22px] font-semibold leading-tight text-primary">{data.focusTopic || "Add your first topic"}</p><p className="mt-2 text-[12px] leading-relaxed text-muted-foreground">A short explanation with your tutor will make this click.</p><Link href="/tutor" data-testid="link-focus-tutor" className="mt-4 inline-flex items-center gap-1.5 text-[12px] font-bold text-primary">Explore with tutor <ArrowRight className="h-3.5 w-3.5" /></Link></div>
+            <div className="rounded-2xl bg-secondary/70 p-4"><p className="font-mono-ui text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Focus topic</p><p className="mt-2 font-display text-[22px] font-semibold leading-tight text-primary">{data.focusTopic || "Add your first topic"}</p><p className="mt-2 text-[12px] leading-relaxed text-muted-foreground">{data.focusReason || "A short explanation with your tutor will make this click."}</p><Link href="/tutor" data-testid="link-focus-tutor" className="mt-4 inline-flex items-center gap-1.5 text-[12px] font-bold text-primary">Explore with tutor <ArrowRight className="h-3.5 w-3.5" /></Link></div>
             {data.strongestTopic && <div className="mt-4 flex items-center gap-3 border-t border-border pt-4"><Lightbulb className="h-4 w-4 text-chart-3" /><p className="text-[12px] text-muted-foreground">Your strongest topic is <strong className="font-semibold text-primary">{data.strongestTopic}</strong>.</p></div>}
           </section>
         </div>
+        {data.upcomingEvents.length > 0 && (
+          <section className="rounded-[22px] border border-border bg-card p-5 sm:p-6">
+            <div className="mb-4 flex items-center gap-2"><Calendar className="h-4 w-4 text-primary" /><p className="font-mono-ui text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Coming up</p></div>
+            <div className="space-y-2">
+              {data.upcomingEvents.map((event) => (
+                <div key={event.id} className="flex items-center justify-between gap-3 rounded-2xl border border-border p-3" data-testid={`row-upcoming-${event.id}`}>
+                  <div className="min-w-0">
+                    <p className="truncate text-[13px] font-semibold text-primary">{event.title}</p>
+                    <p className="mt-0.5 text-[11px] text-muted-foreground">{event.courseName}</p>
+                  </div>
+                  <span className="shrink-0 rounded-full bg-secondary px-2.5 py-1 font-mono-ui text-[10px] text-muted-foreground">{formatDate(event.eventDate)}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
         <section className="grid grid-cols-2 gap-3 sm:grid-cols-4"><StatPill label="Study streak" value={`${data.streak || 0} ${data.streak === 1 ? "day" : "days"}`} accent /><StatPill label="Earned XP" value={`${data.xp || 0} xp`} /><StatPill label="Questions this week" value={`${data.questionsThisWeek || 0}`} /><StatPill label="Topics mastered" value={`${data.masteredTopics || 0}`} /></section>
       </div>}
     </div>

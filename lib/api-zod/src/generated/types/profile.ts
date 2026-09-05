@@ -11,10 +11,26 @@ export interface Profile {
   /** @nullable */
   fullName: string | null;
   /** @nullable */
+  firstName?: string | null;
+  /** @nullable */
+  lastName?: string | null;
+  /** @nullable */
   gradeLevel?: string | null;
   /** @nullable */
   studyMinutesPerDay?: number | null;
   /** @nullable */
   learningStyle?: string | null;
+  /** @nullable */
+  country?: string | null;
+  /** @nullable */
+  educationLevel?: string | null;
+  /** @nullable */
+  institutionName?: string | null;
+  /** @nullable */
+  programMajor?: string | null;
+  /** @nullable */
+  gradeYear?: string | null;
+  /** @nullable */
+  expectedCompletionDate?: string | null;
   onboardingCompleted: boolean;
 }

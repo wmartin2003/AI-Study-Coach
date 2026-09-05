@@ -10,8 +10,20 @@ import type { CourseTopic } from './courseTopic';
 export interface Course {
   id: string;
   name: string;
-  examDate: string;
+  /** @nullable */
+  completionDate: string | null;
   level: string;
+  status: string;
+  /** @nullable */
+  courseCode?: string | null;
+  /** @nullable */
+  institution?: string | null;
+  /** @nullable */
+  instructor?: string | null;
+  /** @nullable */
+  term?: string | null;
+  /** @nullable */
+  completedAt?: string | null;
   progress: number;
   topics: CourseTopic[];
 }

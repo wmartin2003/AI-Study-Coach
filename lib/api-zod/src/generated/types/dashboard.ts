@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { StudyTask } from './studyTask';
+import type { UpcomingEvent } from './upcomingEvent';
 
 export interface Dashboard {
   greeting: string;
@@ -13,9 +14,11 @@ export interface Dashboard {
   courseProgress: number;
   strongestTopic: string;
   focusTopic: string;
+  focusReason: string;
   tasks: StudyTask[];
   xp: number;
   streak: number;
   questionsThisWeek: number;
   masteredTopics: number;
+  upcomingEvents: UpcomingEvent[];
 }

@@ -14,19 +14,43 @@ export interface Profile {
   /** @nullable */
   fullName: string | null;
   /** @nullable */
+  firstName?: string | null;
+  /** @nullable */
+  lastName?: string | null;
+  /** @nullable */
   gradeLevel?: string | null;
   /** @nullable */
   studyMinutesPerDay?: number | null;
   /** @nullable */
   learningStyle?: string | null;
+  /** @nullable */
+  country?: string | null;
+  /** @nullable */
+  educationLevel?: string | null;
+  /** @nullable */
+  institutionName?: string | null;
+  /** @nullable */
+  programMajor?: string | null;
+  /** @nullable */
+  gradeYear?: string | null;
+  /** @nullable */
+  expectedCompletionDate?: string | null;
   onboardingCompleted: boolean;
 }
 
 export interface ProfileInput {
   fullName?: string;
+  firstName?: string;
+  lastName?: string;
   gradeLevel?: string;
   studyMinutesPerDay?: number;
   learningStyle?: string;
+  country?: string;
+  educationLevel?: string;
+  institutionName?: string;
+  programMajor?: string;
+  gradeYear?: string;
+  expectedCompletionDate?: string;
   onboardingCompleted?: boolean;
 }
 
@@ -50,8 +74,20 @@ export interface CourseTopic {
 export interface Course {
   id: string;
   name: string;
-  examDate: string;
+  /** @nullable */
+  completionDate: string | null;
   level: string;
+  status: string;
+  /** @nullable */
+  courseCode?: string | null;
+  /** @nullable */
+  institution?: string | null;
+  /** @nullable */
+  instructor?: string | null;
+  /** @nullable */
+  term?: string | null;
+  /** @nullable */
+  completedAt?: string | null;
   progress: number;
   topics: CourseTopic[];
 }
@@ -59,10 +95,23 @@ export interface Course {
 export interface CourseInput {
   /** @minLength 1 */
   name: string;
+  completionDate?: string;
+  level?: string;
+  courseCode?: string;
+  institution?: string;
+  instructor?: string;
+  term?: string;
+}
+
+export interface CourseUpdateInput {
   /** @minLength 1 */
-  examDate: string;
-  /** @minLength 1 */
-  level: string;
+  name?: string;
+  completionDate?: string;
+  level?: string;
+  courseCode?: string;
+  institution?: string;
+  instructor?: string;
+  term?: string;
 }
 
 export interface StudyTask {
@@ -72,24 +121,36 @@ export interface StudyTask {
   completed: boolean;
 }
 
+export interface UpcomingEvent {
+  id: string;
+  courseName: string;
+  type: string;
+  title: string;
+  eventDate: string;
+}
+
 export interface Dashboard {
   greeting: string;
   courseName: string;
   courseProgress: number;
   strongestTopic: string;
   focusTopic: string;
+  focusReason: string;
   tasks: StudyTask[];
   xp: number;
   streak: number;
   questionsThisWeek: number;
   masteredTopics: number;
+  upcomingEvents: UpcomingEvent[];
 }
 
 export interface TutorMessageInput {
   /** @minLength 1 */
   message: string;
   /** @nullable */
-  context?: string | null;
+  courseId?: string | null;
+  /** @nullable */
+  topicName?: string | null;
   /** @nullable */
   conversationId?: string | null;
 }
@@ -122,4 +183,104 @@ export interface QuizFeedback {
   xp: number;
   nextTopic: string;
 }
+
+export interface DocumentSummary {
+  id: string;
+  fileName: string;
+  documentType: string;
+  status: string;
+  createdAt: string;
+  /** @nullable */
+  sizeBytes?: number | null;
+}
+
+export interface DocumentUpdateInput {
+  fileName?: string;
+  documentType?: string;
+}
+
+export interface DocumentUrl {
+  url: string;
+}
+
+export interface ExtractedTopic {
+  name: string;
+  confidence: string;
+}
+
+export interface ExtractedEvent {
+  type: string;
+  title: string;
+  /** @nullable */
+  eventDate: string | null;
+  confidence: string;
+}
+
+export interface SyllabusExtraction {
+  confidence: string;
+  /** @nullable */
+  courseName: string | null;
+  /** @nullable */
+  courseCode: string | null;
+  /** @nullable */
+  instructor: string | null;
+  /** @nullable */
+  term: string | null;
+  topics: ExtractedTopic[];
+  events: ExtractedEvent[];
+}
+
+export interface ExtractionApplyResult {
+  topicsCreated: number;
+  eventsCreated: number;
+}
+
+export interface CourseEvent {
+  id: string;
+  courseId: string;
+  courseName: string;
+  type: string;
+  title: string;
+  eventDate: string;
+  /** @nullable */
+  description?: string | null;
+  source: string;
+}
+
+export interface CourseEventInput {
+  courseId: string;
+  type: string;
+  /** @minLength 1 */
+  title: string;
+  /** @minLength 1 */
+  eventDate: string;
+  description?: string;
+}
+
+export interface Achievement {
+  id: string;
+  key: string;
+  title: string;
+  /** @nullable */
+  description: string | null;
+  /** @nullable */
+  courseName: string | null;
+  /** @nullable */
+  courseCode: string | null;
+  earnedAt: string;
+  /** @nullable */
+  masteryAtCompletion?: number | null;
+}
+
+export type GetTutorConversationParams = {
+courseId?: string;
+};
+
+export type ListCoursesParams = {
+status?: string;
+};
+
+export type ListEventsParams = {
+courseId?: string;
+};
 
