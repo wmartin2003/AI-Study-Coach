@@ -4,6 +4,8 @@ import { ArrowRight, BookOpen } from "lucide-react";
 import { getGetProfileQueryKey, useUpdateProfile } from "@workspace/api-client-react";
 import { Button } from "@/components/app-shell";
 import { queryClient } from "@/lib/query-client";
+import { CountrySelect } from "@/components/country-select";
+import { InstitutionSelect, type InstitutionValue } from "@/components/institution-select";
 
 type EducationLevel = "high_school" | "college" | "university" | "other";
 
@@ -17,9 +19,10 @@ const LEVEL_LABELS: Record<EducationLevel, string> = {
 export default function OnboardingPage() {
   const [, setLocation] = useLocation();
   const updateProfile = useUpdateProfile();
-  const [country, setCountry] = useState("");
+  const [countryCode, setCountryCode] = useState<string | null>(null);
   const [educationLevel, setEducationLevel] = useState<EducationLevel | "">("");
-  const [institutionName, setInstitutionName] = useState("");
+  const [institution, setInstitution] = useState<InstitutionValue | null>(null);
+  const [degree, setDegree] = useState("");
   const [programMajor, setProgramMajor] = useState("");
   const [gradeYear, setGradeYear] = useState("");
   const [expectedCompletionDate, setExpectedCompletionDate] = useState("");
@@ -29,9 +32,13 @@ export default function OnboardingPage() {
       {
         data: {
           onboardingCompleted,
-          country: country || undefined,
+          countryCode: countryCode || undefined,
           educationLevel: educationLevel || undefined,
-          institutionName: institutionName || undefined,
+          institutionName: institution?.name || undefined,
+          institutionCountryCode: institution?.countryCode ?? undefined,
+          institutionWebsite: institution?.website ?? undefined,
+          institutionDomain: institution?.domain ?? undefined,
+          degree: degree || undefined,
           programMajor: programMajor || undefined,
           gradeYear: gradeYear || undefined,
           expectedCompletionDate: expectedCompletionDate || undefined,
@@ -86,14 +93,9 @@ export default function OnboardingPage() {
               <label className="block text-[13px] font-semibold text-primary" htmlFor="country">
                 Country
               </label>
-              <input
-                id="country"
-                value={country}
-                onChange={(event) => setCountry(event.target.value)}
-                placeholder="e.g. Canada"
-                data-testid="input-country"
-                className="form-input mt-2"
-              />
+              <div className="mt-2">
+                <CountrySelect value={countryCode} onChange={setCountryCode} testId="select-country" />
+              </div>
             </div>
 
             <div>
@@ -119,17 +121,16 @@ export default function OnboardingPage() {
             {isSchool && (
               <div className="space-y-5 rounded-2xl bg-secondary/50 p-4" data-testid="section-high-school-fields">
                 <div>
-                  <label className="block text-[13px] font-semibold text-primary" htmlFor="institutionName">
-                    School name
-                  </label>
-                  <input
-                    id="institutionName"
-                    value={institutionName}
-                    onChange={(event) => setInstitutionName(event.target.value)}
-                    placeholder="e.g. Lincoln High School"
-                    data-testid="input-institution-name"
-                    className="form-input mt-2"
-                  />
+                  <label className="block text-[13px] font-semibold text-primary">School name</label>
+                  <div className="mt-2">
+                    <InstitutionSelect
+                      value={institution}
+                      countryCode={countryCode}
+                      onChange={setInstitution}
+                      placeholder="e.g. Lincoln High School"
+                      testId="select-institution"
+                    />
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -165,30 +166,44 @@ export default function OnboardingPage() {
             {isCollegeLevel && (
               <div className="space-y-5 rounded-2xl bg-secondary/50 p-4" data-testid="section-college-fields">
                 <div>
-                  <label className="block text-[13px] font-semibold text-primary" htmlFor="institutionName">
-                    Institution name
-                  </label>
-                  <input
-                    id="institutionName"
-                    value={institutionName}
-                    onChange={(event) => setInstitutionName(event.target.value)}
-                    placeholder="e.g. University of Toronto"
-                    data-testid="input-institution-name"
-                    className="form-input mt-2"
-                  />
+                  <label className="block text-[13px] font-semibold text-primary">Institution name</label>
+                  <div className="mt-2">
+                    <InstitutionSelect
+                      value={institution}
+                      countryCode={countryCode}
+                      onChange={setInstitution}
+                      placeholder="e.g. University of Toronto"
+                      testId="select-institution"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-[13px] font-semibold text-primary" htmlFor="programMajor">
-                    Program / major
-                  </label>
-                  <input
-                    id="programMajor"
-                    value={programMajor}
-                    onChange={(event) => setProgramMajor(event.target.value)}
-                    placeholder="e.g. Computer Science"
-                    data-testid="input-program-major"
-                    className="form-input mt-2"
-                  />
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[13px] font-semibold text-primary" htmlFor="degree">
+                      Degree
+                    </label>
+                    <input
+                      id="degree"
+                      value={degree}
+                      onChange={(event) => setDegree(event.target.value)}
+                      placeholder="e.g. Bachelor of Science"
+                      data-testid="input-degree"
+                      className="form-input mt-2"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[13px] font-semibold text-primary" htmlFor="programMajor">
+                      Program / major
+                    </label>
+                    <input
+                      id="programMajor"
+                      value={programMajor}
+                      onChange={(event) => setProgramMajor(event.target.value)}
+                      placeholder="e.g. Computer Science"
+                      data-testid="input-program-major"
+                      className="form-input mt-2"
+                    />
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>

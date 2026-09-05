@@ -25,17 +25,34 @@ export interface Profile {
   learningStyle?: string | null;
   /** @nullable */
   country?: string | null;
+  /**
+     * ISO 3166-1 alpha-2 code, set only via the country picker.
+     * @nullable
+     */
+  countryCode?: string | null;
   /** @nullable */
   educationLevel?: string | null;
   /** @nullable */
   institutionName?: string | null;
   /** @nullable */
+  institutionCountryCode?: string | null;
+  /**
+     * Official site URL — present only when the institution was selected from a lookup result, i.e. verified rather than freely typed.
+     * @nullable
+     */
+  institutionWebsite?: string | null;
+  /** @nullable */
+  institutionDomain?: string | null;
+  /** @nullable */
   programMajor?: string | null;
+  /** @nullable */
+  degree?: string | null;
   /** @nullable */
   gradeYear?: string | null;
   /** @nullable */
   expectedCompletionDate?: string | null;
   onboardingCompleted: boolean;
+  personalizationEnabled?: boolean;
 }
 
 export interface ProfileInput {
@@ -46,12 +63,32 @@ export interface ProfileInput {
   studyMinutesPerDay?: number;
   learningStyle?: string;
   country?: string;
+  /** @nullable */
+  countryCode?: string | null;
   educationLevel?: string;
   institutionName?: string;
+  /** @nullable */
+  institutionCountryCode?: string | null;
+  /** @nullable */
+  institutionWebsite?: string | null;
+  /** @nullable */
+  institutionDomain?: string | null;
   programMajor?: string;
+  degree?: string;
   gradeYear?: string;
   expectedCompletionDate?: string;
   onboardingCompleted?: boolean;
+  personalizationEnabled?: boolean;
+}
+
+export interface Institution {
+  name: string;
+  /** @nullable */
+  countryCode?: string | null;
+  /** @nullable */
+  website?: string | null;
+  /** @nullable */
+  domain?: string | null;
 }
 
 export interface ConversationMessage {
@@ -278,6 +315,11 @@ courseId?: string;
 
 export type ListCoursesParams = {
 status?: string;
+};
+
+export type SearchInstitutionsParams = {
+q: string;
+countryCode?: string;
 };
 
 export type ListEventsParams = {

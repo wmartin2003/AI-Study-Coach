@@ -12,8 +12,11 @@ import QuizPage from "@/pages/quiz";
 import NewCoursePage from "@/pages/new-course";
 import OnboardingPage from "@/pages/onboarding";
 import AchievementsPage from "@/pages/achievements";
+import ProfilePage from "@/pages/profile";
+import SettingsPage from "@/pages/settings";
 import LoginPage from "@/pages/login";
 import { AuthProvider, useAuth } from "@/lib/auth-context";
+import { ThemeProvider } from "@/lib/theme";
 import { getGetProfileQueryKey, useGetProfile } from "@workspace/api-client-react";
 import { Route, Switch, useLocation, Router as WouterRouter } from "wouter";
 
@@ -67,6 +70,8 @@ function Router() {
         <Route path="/tutor" component={() => <ProtectedRoute component={TutorPage} />} />
         <Route path="/quiz" component={() => <ProtectedRoute component={QuizPage} />} />
         <Route path="/achievements" component={() => <ProtectedRoute component={AchievementsPage} />} />
+        <Route path="/profile" component={() => <ProtectedRoute component={ProfilePage} />} />
+        <Route path="/settings" component={() => <ProtectedRoute component={SettingsPage} />} />
         <Route path="/courses/new" component={() => <ProtectedRoute component={NewCoursePage} />} />
         <Route component={NotFound} />
       </Switch>
@@ -82,14 +87,16 @@ function RoutedErrorBoundary({ children }: { children: ReactNode }) {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
-          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
-            <Router />
-          </WouterRouter>
-          <Toaster />
-        </TooltipProvider>
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <TooltipProvider>
+            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
+              <Router />
+            </WouterRouter>
+            <Toaster />
+          </TooltipProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

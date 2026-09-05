@@ -29,12 +29,18 @@ export const GetProfileResponse = zod.object({
   "studyMinutesPerDay": zod.number().nullish(),
   "learningStyle": zod.string().nullish(),
   "country": zod.string().nullish(),
+  "countryCode": zod.string().nullish().describe('ISO 3166-1 alpha-2 code, set only via the country picker.'),
   "educationLevel": zod.string().nullish(),
   "institutionName": zod.string().nullish(),
+  "institutionCountryCode": zod.string().nullish(),
+  "institutionWebsite": zod.string().nullish().describe('Official site URL — present only when the institution was selected from a lookup result, i.e. verified rather than freely typed.'),
+  "institutionDomain": zod.string().nullish(),
   "programMajor": zod.string().nullish(),
+  "degree": zod.string().nullish(),
   "gradeYear": zod.string().nullish(),
   "expectedCompletionDate": zod.string().nullish(),
-  "onboardingCompleted": zod.boolean()
+  "onboardingCompleted": zod.boolean(),
+  "personalizationEnabled": zod.boolean().optional()
 })
 
 
@@ -49,12 +55,18 @@ export const UpdateProfileBody = zod.object({
   "studyMinutesPerDay": zod.number().optional(),
   "learningStyle": zod.string().optional(),
   "country": zod.string().optional(),
+  "countryCode": zod.string().nullish(),
   "educationLevel": zod.string().optional(),
   "institutionName": zod.string().optional(),
+  "institutionCountryCode": zod.string().nullish(),
+  "institutionWebsite": zod.string().nullish(),
+  "institutionDomain": zod.string().nullish(),
   "programMajor": zod.string().optional(),
+  "degree": zod.string().optional(),
   "gradeYear": zod.string().optional(),
   "expectedCompletionDate": zod.string().optional(),
-  "onboardingCompleted": zod.boolean().optional()
+  "onboardingCompleted": zod.boolean().optional(),
+  "personalizationEnabled": zod.boolean().optional()
 })
 
 export const UpdateProfileResponse = zod.object({
@@ -66,13 +78,25 @@ export const UpdateProfileResponse = zod.object({
   "studyMinutesPerDay": zod.number().nullish(),
   "learningStyle": zod.string().nullish(),
   "country": zod.string().nullish(),
+  "countryCode": zod.string().nullish().describe('ISO 3166-1 alpha-2 code, set only via the country picker.'),
   "educationLevel": zod.string().nullish(),
   "institutionName": zod.string().nullish(),
+  "institutionCountryCode": zod.string().nullish(),
+  "institutionWebsite": zod.string().nullish().describe('Official site URL — present only when the institution was selected from a lookup result, i.e. verified rather than freely typed.'),
+  "institutionDomain": zod.string().nullish(),
   "programMajor": zod.string().nullish(),
+  "degree": zod.string().nullish(),
   "gradeYear": zod.string().nullish(),
   "expectedCompletionDate": zod.string().nullish(),
-  "onboardingCompleted": zod.boolean()
+  "onboardingCompleted": zod.boolean(),
+  "personalizationEnabled": zod.boolean().optional()
 })
+
+
+/**
+ * @summary Permanently delete the signed-in student's account and all associated data
+ */
+export const DeleteAccountResponse = zod.void()
 
 
 /**
@@ -423,6 +447,23 @@ export const ConfirmExtractionResponse = zod.object({
   "topicsCreated": zod.number(),
   "eventsCreated": zod.number()
 })
+
+
+/**
+ * @summary Search a public university/school dataset by name
+ */
+export const SearchInstitutionsQueryParams = zod.object({
+  "q": zod.coerce.string(),
+  "countryCode": zod.coerce.string().optional()
+})
+
+export const SearchInstitutionsResponseItem = zod.object({
+  "name": zod.string(),
+  "countryCode": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "domain": zod.string().nullish()
+})
+export const SearchInstitutionsResponse = zod.array(SearchInstitutionsResponseItem)
 
 
 /**

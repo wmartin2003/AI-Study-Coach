@@ -14,10 +14,12 @@ RULES:
 - Adapt your depth and vocabulary to the student's apparent level.
 - Identify misconceptions gently and correct them clearly, without shaming the student.
 - Use the student's learning history (mastery, recent mistakes) to tailor your response when it's relevant.
-- Use the student's education level, year, and program to pitch depth and vocabulary appropriately — but never assume or invent specifics of their school's actual curriculum, syllabus, or course content unless it was provided to you directly.
+- Use the student's education level, year, program, and institution to pitch depth and vocabulary appropriately — but never assume or invent specifics of their school's actual curriculum, syllabus, degree requirements, or course content unless it was provided to you directly (uploaded material, or a course/topic explicitly given in context). "According to your uploaded material..." is fine when true; "your program requires..." is not, unless that exact requirement was actually given to you.
+- When an institution is marked "verified" in your context, that only means the name/website came from a lookup, not that you know anything about its actual programs or requirements — never present general knowledge about a field of study as if it were that specific institution's official curriculum. Phrase general guidance as general ("students in similar programs typically...") rather than institution-specific fact.
 - Ground answers in the student's uploaded material when it's provided in context; if nothing relevant was retrieved, say so plainly instead of guessing.
 - Never claim to have read a document that wasn't provided to you.
-- Keep replies concise — a few short paragraphs at most, plus at most one follow-up question or prompt.
+- Match your formatting to the question. A short factual question gets a short, direct answer — a sentence or two, no headings. A conceptual or multi-part question can use light Markdown structure to stay scannable: a heading or two, a short bullet list, numbered steps for a process, **bold** for the one or two terms worth highlighting. Never format for its own sake, and never turn a simple answer into an unnecessarily long one just to use more structure.
+- Keep replies as short as the question allows, plus at most one follow-up question or prompt.
 
 You will be given structured context about the student before their message. Use it silently; don't recite it back to them.`;
 
@@ -26,6 +28,9 @@ export type TutorContext = {
   educationLevel: string | null;
   gradeYear: string | null;
   programMajor: string | null;
+  degree: string | null;
+  institutionName: string | null;
+  institutionVerified: boolean;
   courseId: string | null;
   courseName: string | null;
   topicName: string | null;
@@ -51,13 +56,21 @@ export async function assembleContext(
   const [profileRes, courseRes] = await Promise.all([
     supabase
       .from("profiles")
-      .select("full_name, education_level, grade_year, program_major")
+      .select(
+        "full_name, education_level, grade_year, program_major, degree, institution_name, institution_website, personalization_enabled",
+      )
       .eq("id", userId)
       .maybeSingle(),
     courseId
       ? supabase.from("courses").select("id, name").eq("id", courseId).maybeSingle()
       : Promise.resolve({ data: null }),
   ]);
+
+  // Settings > AI & Personalization: when off, the tutor still gets full
+  // course/topic/mastery/document context (that's the app doing its job for
+  // the course the student is actively asking about) but nothing from their
+  // stored profile — name, education level, institution, program, degree.
+  const personalizationEnabled = profileRes.data?.personalization_enabled !== false;
 
   let resolvedTopicName: string | null = topicName ?? null;
   let masteryLevel: string | null = null;
@@ -87,10 +100,16 @@ export async function assembleContext(
     .limit(3);
 
   return {
-    fullName: profileRes.data?.full_name ?? null,
-    educationLevel: profileRes.data?.education_level ?? null,
-    gradeYear: profileRes.data?.grade_year ?? null,
-    programMajor: profileRes.data?.program_major ?? null,
+    fullName: personalizationEnabled ? profileRes.data?.full_name ?? null : null,
+    educationLevel: personalizationEnabled ? profileRes.data?.education_level ?? null : null,
+    gradeYear: personalizationEnabled ? profileRes.data?.grade_year ?? null : null,
+    programMajor: personalizationEnabled ? profileRes.data?.program_major ?? null : null,
+    degree: personalizationEnabled ? profileRes.data?.degree ?? null : null,
+    institutionName: personalizationEnabled ? profileRes.data?.institution_name ?? null : null,
+    // "Verified" here means the name came from the institution lookup (so a
+    // real, checkable website is attached) — never a claim that we know
+    // anything about that institution's actual programs or requirements.
+    institutionVerified: personalizationEnabled ? Boolean(profileRes.data?.institution_website) : false,
     courseId: courseRes.data?.id ?? null,
     courseName: courseRes.data?.name ?? null,
     topicName: resolvedTopicName,
@@ -104,7 +123,10 @@ function contextBlock(context: TutorContext, retrieval?: { hasDocuments: boolean
   const lines = [
     context.fullName ? `Student: ${context.fullName}` : null,
     context.educationLevel ? `Education level: ${context.educationLevel}${context.gradeYear ? ` (${context.gradeYear})` : ""}` : null,
-    context.programMajor ? `Program/major: ${context.programMajor}` : null,
+    context.programMajor ? `Program/major: ${context.programMajor}${context.degree ? ` (${context.degree})` : ""}` : null,
+    context.institutionName
+      ? `Institution: ${context.institutionName}${context.institutionVerified ? " (verified via lookup — you still know nothing about its specific curriculum beyond what's given here)" : " (as entered by the student, unverified)"}`
+      : null,
     context.courseName ? `Course: ${context.courseName}` : null,
     context.topicName ? `Current topic: ${context.topicName}` : null,
     context.masteryLevel
@@ -138,7 +160,10 @@ export async function generateReply(
 
   const response = await anthropic.messages.create({
     model: TUTOR_MODEL,
-    max_tokens: 700,
+    // Enough headroom for a fully-structured explanation (headings + bullets
+    // + an example) when the question warrants it; the system prompt is what
+    // actually keeps simple answers short, not this ceiling.
+    max_tokens: 1200,
     system: block ? `${SYSTEM_PROMPT}\n\n${block}` : SYSTEM_PROMPT,
     messages: [
       ...history.map((turn) => ({ role: turn.role, content: turn.content }) as const),

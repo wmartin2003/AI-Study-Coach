@@ -55,6 +55,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Profile"
+  /account:
+    delete:
+      operationId: deleteAccount
+      tags: [study]
+      summary: Permanently delete the signed-in student's account and all associated data
+      responses:
+        "204":
+          description: Account deleted
   /tutor/conversation:
     get:
       operationId: getTutorConversation
@@ -305,6 +313,29 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ExtractionApplyResult"
+  /institutions/search:
+    get:
+      operationId: searchInstitutions
+      tags: [study]
+      summary: Search a public university/school dataset by name
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema: { type: string }
+        - name: countryCode
+          in: query
+          required: false
+          schema: { type: string }
+      responses:
+        "200":
+          description: Matching institutions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Institution"
   /events:
     get:
       operationId: listEvents
@@ -459,12 +490,18 @@ components:
         studyMinutesPerDay: { type: ["number", "null"] }
         learningStyle: { type: ["string", "null"] }
         country: { type: ["string", "null"] }
+        countryCode: { type: ["string", "null"], description: "ISO 3166-1 alpha-2 code, set only via the country picker." }
         educationLevel: { type: ["string", "null"] }
         institutionName: { type: ["string", "null"] }
+        institutionCountryCode: { type: ["string", "null"] }
+        institutionWebsite: { type: ["string", "null"], description: "Official site URL — present only when the institution was selected from a lookup result, i.e. verified rather than freely typed." }
+        institutionDomain: { type: ["string", "null"] }
         programMajor: { type: ["string", "null"] }
+        degree: { type: ["string", "null"] }
         gradeYear: { type: ["string", "null"] }
         expectedCompletionDate: { type: ["string", "null"] }
         onboardingCompleted: { type: boolean }
+        personalizationEnabled: { type: boolean }
     ProfileInput:
       type: object
       properties:
@@ -475,12 +512,26 @@ components:
         studyMinutesPerDay: { type: number }
         learningStyle: { type: string }
         country: { type: string }
+        countryCode: { type: ["string", "null"] }
         educationLevel: { type: string }
         institutionName: { type: string }
+        institutionCountryCode: { type: ["string", "null"] }
+        institutionWebsite: { type: ["string", "null"] }
+        institutionDomain: { type: ["string", "null"] }
         programMajor: { type: string }
+        degree: { type: string }
         gradeYear: { type: string }
         expectedCompletionDate: { type: string }
         onboardingCompleted: { type: boolean }
+        personalizationEnabled: { type: boolean }
+    Institution:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+        countryCode: { type: ["string", "null"] }
+        website: { type: ["string", "null"] }
+        domain: { type: ["string", "null"] }
     ConversationMessage:
       type: object
       required: [role, message]

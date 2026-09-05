@@ -10,6 +10,7 @@ import {
 } from "@workspace/api-client-react";
 import type { TutorMessage } from "@workspace/api-client-react";
 import { AppShell, ErrorNotice, PageHeading } from "@/components/app-shell";
+import { TutorMarkdown } from "@/components/tutor-markdown";
 
 type ChatMessage = { role: string; message: string; prompt?: string };
 const GENERAL = "__general__";
@@ -160,11 +161,11 @@ export default function TutorPage() {
               ) : (
                 messages.map((message, index) => (
                   <div key={`${message.role}-${index}`} className={`flex gap-3 ${message.role === "student" ? "justify-end" : "justify-start"}`} data-testid={`message-${message.role}-${index}`}>
-                    <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-[13px] leading-relaxed sm:max-w-[72%] ${message.role === "student" ? "rounded-br-md bg-primary text-primary-foreground" : "rounded-bl-md bg-secondary text-primary"}`}>
+                    <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-[13px] leading-relaxed sm:max-w-[80%] ${message.role === "student" ? "rounded-br-md bg-primary text-primary-foreground" : "rounded-bl-md bg-secondary text-primary"}`}>
                       {message.role !== "student" && (
                         <div className="mb-2 flex items-center gap-1.5 font-mono-ui text-[9px] uppercase tracking-[0.14em] text-primary/50"><Sparkles className="h-3 w-3" /> Coach</div>
                       )}
-                      {message.message}
+                      {message.role === "student" ? message.message : <TutorMarkdown content={message.message} />}
                     </div>
                   </div>
                 ))

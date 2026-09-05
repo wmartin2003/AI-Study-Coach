@@ -1,4 +1,4 @@
-import { Award, BookOpen, Brain, CalendarDays, ChevronRight, LayoutDashboard, Library, ListChecks, LogOut, Menu, Plus, Sparkles, X } from "lucide-react";
+import { Award, BookOpen, Brain, CalendarDays, ChevronRight, LayoutDashboard, Library, ListChecks, LogOut, Menu, Plus, Settings, Sparkles, User, X } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/lib/auth-context";
@@ -9,6 +9,11 @@ const navItems = [
   { href: "/tutor", label: "Ask your tutor", icon: Brain },
   { href: "/quiz", label: "Adaptive quiz", icon: ListChecks },
   { href: "/achievements", label: "Achievements", icon: Award },
+];
+
+const accountItems = [
+  { href: "/profile", label: "Profile", icon: User },
+  { href: "/settings", label: "Settings", icon: Settings },
 ];
 
 export function BrandMark() {
@@ -58,6 +63,18 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           Add a course
         </Link>
       </div>
+      <nav className="mt-6 space-y-1 border-t border-sidebar-border pt-6" aria-label="Account navigation">
+        {accountItems.map(({ href, label, icon: Icon }) => {
+          const active = location.startsWith(href);
+          return (
+            <Link key={href} href={href} onClick={onNavigate} data-testid={`link-nav-${label.toLowerCase()}`}
+              className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all duration-200 ${active ? "bg-sidebar-accent text-sidebar-foreground shadow-[inset_3px_0_0_hsl(var(--accent))]" : "text-sidebar-foreground/65 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground"}`}>
+              <Icon className={`h-[17px] w-[17px] ${active ? "text-accent" : "text-sidebar-foreground/50 group-hover:text-accent/80"}`} strokeWidth={active ? 2.3 : 1.8} />
+              <span>{label}</span>
+            </Link>
+          );
+        })}
+      </nav>
       <div className="mt-auto">
         <div className="mb-5 rounded-2xl border border-sidebar-border bg-sidebar-accent/60 p-4">
           <div className="mb-3 flex items-center gap-2 text-accent"><Sparkles className="h-3.5 w-3.5" /><span className="font-mono-ui text-[10px] uppercase tracking-[0.14em]">Small steps</span></div>

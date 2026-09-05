@@ -34,6 +34,7 @@ import type {
   ExtractionApplyResult,
   GetTutorConversationParams,
   HealthStatus,
+  Institution,
   ListCoursesParams,
   ListEventsParams,
   Profile,
@@ -41,6 +42,7 @@ import type {
   QuizAnswerInput,
   QuizFeedback,
   QuizQuestion,
+  SearchInstitutionsParams,
   SyllabusExtraction,
   TutorMessage,
   TutorMessageInput
@@ -297,6 +299,77 @@ export const useUpdateProfile = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getUpdateProfileMutationOptions(options));
+    }
+
+export const getDeleteAccountUrl = () => {
+
+
+
+
+  return `/api/account`
+}
+
+/**
+ * @summary Permanently delete the signed-in student's account and all associated data
+ */
+export const deleteAccount = async ( options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getDeleteAccountUrl(),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteAccountMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAccount>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteAccount>>, TError,void, TContext> => {
+
+const mutationKey = ['deleteAccount'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteAccount>>, void> = () => {
+
+
+          return  deleteAccount(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteAccountMutationResult = NonNullable<Awaited<ReturnType<typeof deleteAccount>>>
+
+    export type DeleteAccountMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Permanently delete the signed-in student's account and all associated data
+ */
+export const useDeleteAccount = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAccount>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteAccount>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getDeleteAccountMutationOptions(options));
     }
 
 export const getGetTutorConversationUrl = (params?: GetTutorConversationParams,) => {
@@ -1339,6 +1412,90 @@ export const useConfirmExtraction = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getConfirmExtractionMutationOptions(options));
     }
+
+export const getSearchInstitutionsUrl = (params: SearchInstitutionsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/institutions/search?${stringifiedParams}` : `/api/institutions/search`
+}
+
+/**
+ * @summary Search a public university/school dataset by name
+ */
+export const searchInstitutions = async (params: SearchInstitutionsParams, options?: Parameters<typeof customFetch>[1]): Promise<Institution[]> => {
+
+  return customFetch<Institution[]>(getSearchInstitutionsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getSearchInstitutionsQueryKey = (params?: SearchInstitutionsParams,) => {
+    return [
+    `/api/institutions/search`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getSearchInstitutionsQueryOptions = <TData = Awaited<ReturnType<typeof searchInstitutions>>, TError = ErrorType<unknown>>(params: SearchInstitutionsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof searchInstitutions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getSearchInstitutionsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof searchInstitutions>>> = ({ signal }) => searchInstitutions(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof searchInstitutions>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type SearchInstitutionsQueryResult = NonNullable<Awaited<ReturnType<typeof searchInstitutions>>>
+export type SearchInstitutionsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Search a public university/school dataset by name
+ */
+
+export function useSearchInstitutions<TData = Awaited<ReturnType<typeof searchInstitutions>>, TError = ErrorType<unknown>>(
+ params: SearchInstitutionsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof searchInstitutions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getSearchInstitutionsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getListEventsUrl = (params?: ListEventsParams,) => {
   const normalizedParams = new URLSearchParams();

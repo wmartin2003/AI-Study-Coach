@@ -47,12 +47,18 @@ function toProfileResponse(data: Record<string, unknown>) {
     studyMinutesPerDay: data.study_minutes_per_day,
     learningStyle: data.learning_style,
     country: data.country,
+    countryCode: data.country_code,
     educationLevel: data.education_level,
     institutionName: data.institution_name,
+    institutionCountryCode: data.institution_country_code,
+    institutionWebsite: data.institution_website,
+    institutionDomain: data.institution_domain,
     programMajor: data.program_major,
+    degree: data.degree,
     gradeYear: data.grade_year,
     expectedCompletionDate: data.expected_completion_date,
     onboardingCompleted: data.onboarding_completed,
+    personalizationEnabled: data.personalization_enabled,
   };
 }
 
@@ -72,20 +78,43 @@ router.get("/profile", async (req, res) => {
 router.patch("/profile", async (req, res) => {
   const input = UpdateProfileBody.parse(req.body);
 
+  if (input.firstName !== undefined && !input.firstName.trim()) {
+    return res.status(400).json({ error: "First name can't be blank." });
+  }
+  if (input.lastName !== undefined && !input.lastName.trim()) {
+    return res.status(400).json({ error: "Last name can't be blank." });
+  }
+
   const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
   if (input.fullName !== undefined) patch["full_name"] = input.fullName;
-  if (input.firstName !== undefined) patch["first_name"] = input.firstName;
-  if (input.lastName !== undefined) patch["last_name"] = input.lastName;
+  if (input.firstName !== undefined) patch["first_name"] = input.firstName.trim();
+  if (input.lastName !== undefined) patch["last_name"] = input.lastName.trim();
   if (input.gradeLevel !== undefined) patch["grade_level"] = input.gradeLevel;
   if (input.studyMinutesPerDay !== undefined) patch["study_minutes_per_day"] = input.studyMinutesPerDay;
   if (input.learningStyle !== undefined) patch["learning_style"] = input.learningStyle;
   if (input.country !== undefined) patch["country"] = input.country;
+  if (input.countryCode !== undefined) patch["country_code"] = input.countryCode;
   if (input.educationLevel !== undefined) patch["education_level"] = input.educationLevel;
   if (input.institutionName !== undefined) patch["institution_name"] = input.institutionName;
+  if (input.institutionCountryCode !== undefined) patch["institution_country_code"] = input.institutionCountryCode;
+  if (input.institutionWebsite !== undefined) patch["institution_website"] = input.institutionWebsite;
+  if (input.institutionDomain !== undefined) patch["institution_domain"] = input.institutionDomain;
+
+  // Changing the institution name without also sending a website means the
+  // client is setting free text (typed manually, not chosen from a lookup
+  // result) — clear the previously-verified companion fields so a modified
+  // name can never keep pointing at a stale "verified" website/domain.
+  if (input.institutionName !== undefined && input.institutionWebsite === undefined) {
+    patch["institution_country_code"] = null;
+    patch["institution_website"] = null;
+    patch["institution_domain"] = null;
+  }
   if (input.programMajor !== undefined) patch["program_major"] = input.programMajor;
+  if (input.degree !== undefined) patch["degree"] = input.degree;
   if (input.gradeYear !== undefined) patch["grade_year"] = input.gradeYear;
   if (input.expectedCompletionDate !== undefined) patch["expected_completion_date"] = input.expectedCompletionDate;
   if (input.onboardingCompleted !== undefined) patch["onboarding_completed"] = input.onboardingCompleted;
+  if (input.personalizationEnabled !== undefined) patch["personalization_enabled"] = input.personalizationEnabled;
 
   // A first/last name update keeps `full_name` (used for greetings and the
   // tutor's "Student:" context line) in sync rather than leaving it stale.
