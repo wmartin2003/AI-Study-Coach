@@ -312,28 +312,7 @@ export default function CoursePage() {
                   </TabsContent>
 
                   <TabsContent value="practice" className="mt-6">
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <Link href={`/tutor?course=${selected.id}`} data-testid="link-course-tutor" className="flex items-center gap-3 rounded-2xl border border-border p-4 transition-colors hover:border-primary/30 hover:bg-secondary">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent/30 text-primary">
-                          <Search className="h-4 w-4" />
-                        </div>
-                        <div>
-                          <p className="text-[13px] font-semibold text-primary">Study with tutor</p>
-                          <p className="mt-0.5 text-[11px] text-muted-foreground">Ask about any topic</p>
-                        </div>
-                        <ArrowRight className="ml-auto h-4 w-4 text-muted-foreground" />
-                      </Link>
-                      <Link href="/quiz" data-testid="link-course-quiz" className="flex items-center gap-3 rounded-2xl border border-border p-4 transition-colors hover:border-primary/30 hover:bg-secondary">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent/30 text-primary">
-                          <Play className="h-4 w-4" />
-                        </div>
-                        <div>
-                          <p className="text-[13px] font-semibold text-primary">Test your recall</p>
-                          <p className="mt-0.5 text-[11px] text-muted-foreground">A tailored 10-question quiz</p>
-                        </div>
-                        <ArrowRight className="ml-auto h-4 w-4 text-muted-foreground" />
-                      </Link>
-                    </div>
+                    <PracticeTab courseId={selected.id} topics={topics} />
                   </TabsContent>
                 </Tabs>
               </section>
@@ -1189,6 +1168,71 @@ function CalendarTab({ courseId }: { courseId: string }) {
         }}
       />
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Practice tab
+// ---------------------------------------------------------------------------
+
+function PracticeTab({ courseId, topics }: { courseId: string; topics: CourseTopic[] }) {
+  const [activeTopic, setActiveTopic] = useState<CourseTopic | null>(null);
+
+  // Same "what to focus on" logic as the timeline's "Now" marker: the topic
+  // already in progress, else the next not-started one, else whatever's
+  // first (every topic is mastered) — always something to open, never a
+  // dead-looking card.
+  const recommended =
+    topics.find((t) => t.masteryLevel === "learning" || t.masteryLevel === "developing") ??
+    topics.find((t) => t.masteryLevel === "not_started") ??
+    topics[0];
+
+  return (
+    <>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Link href={`/tutor?course=${courseId}`} data-testid="link-course-tutor" className="flex items-center gap-3 rounded-2xl border border-border p-4 transition-colors hover:border-primary/30 hover:bg-secondary">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent/30 text-primary">
+            <Search className="h-4 w-4" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[13px] font-semibold text-primary">Study with tutor</p>
+            <p className="mt-0.5 text-[11px] text-muted-foreground">Ask about any topic</p>
+          </div>
+          <ArrowRight className="ml-auto h-4 w-4 shrink-0 text-muted-foreground" />
+        </Link>
+        <Link href="/quiz" data-testid="link-course-quiz" className="flex items-center gap-3 rounded-2xl border border-border p-4 transition-colors hover:border-primary/30 hover:bg-secondary">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent/30 text-primary">
+            <Play className="h-4 w-4" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[13px] font-semibold text-primary">Test your recall</p>
+            <p className="mt-0.5 text-[11px] text-muted-foreground">A tailored 10-question quiz</p>
+          </div>
+          <ArrowRight className="ml-auto h-4 w-4 shrink-0 text-muted-foreground" />
+        </Link>
+        {recommended && (
+          <button
+            type="button"
+            onClick={() => setActiveTopic(recommended)}
+            data-testid="button-course-study-guide"
+            className="flex items-center gap-3 rounded-2xl border border-border p-4 text-left transition-colors hover:border-primary/30 hover:bg-secondary sm:col-span-2"
+          >
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent/30 text-primary">
+              <Sparkles className="h-4 w-4" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[13px] font-semibold text-primary">Study guide</p>
+              <p className="mt-0.5 truncate text-[11px] text-muted-foreground">Key points, terms & sources for {recommended.name}</p>
+            </div>
+            <ArrowRight className="ml-auto h-4 w-4 shrink-0 text-muted-foreground" />
+          </button>
+        )}
+      </div>
+
+      {activeTopic && (
+        <TopicStudyGuideDialog courseId={courseId} topic={activeTopic} onClose={() => setActiveTopic(null)} />
+      )}
+    </>
   );
 }
 
