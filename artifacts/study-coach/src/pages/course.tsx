@@ -223,6 +223,12 @@ export default function CoursePage() {
               />
             ) : (
               <section className="rounded-[22px] border border-border bg-card p-5 sm:p-7">
+                {selected.isSample && (
+                  <div className="mb-6 flex items-center gap-2 rounded-xl border border-accent/30 bg-accent/10 px-3.5 py-2.5 text-[12px] text-primary" data-testid="banner-sample-course-detail">
+                    <Sparkles className="h-3.5 w-3.5 shrink-0 text-accent" />
+                    <span>This is an example course. Add your real one, then archive this whenever you're ready.</span>
+                  </div>
+                )}
                 <div className="flex flex-col justify-between gap-4 border-b border-border pb-6 sm:flex-row sm:items-start">
                   <div>
                     <p className="font-mono-ui text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Your path</p>

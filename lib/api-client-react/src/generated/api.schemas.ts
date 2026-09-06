@@ -21,6 +21,14 @@ export interface AccountCreated {
   ok: boolean;
 }
 
+export interface WaitlistInput {
+  email: string;
+}
+
+export interface WaitlistJoined {
+  ok: boolean;
+}
+
 export interface Profile {
   id: string;
   /** @nullable */
@@ -137,6 +145,8 @@ export interface Course {
   term?: string | null;
   /** @nullable */
   completedAt?: string | null;
+  /** True for the hardcoded example course seeded when onboarding completes. */
+  isSample: boolean;
   progress: number;
   topics: CourseTopic[];
 }
@@ -191,6 +201,8 @@ export interface UpcomingEvent {
 export interface Dashboard {
   greeting: string;
   courseName: string;
+  /** True when the course shown above is the hardcoded example seeded at onboarding. */
+  isSampleCourse: boolean;
   courseProgress: number;
   strongestTopic: string;
   focusTopic: string;

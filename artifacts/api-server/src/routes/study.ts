@@ -28,6 +28,7 @@ import { aiRateLimit } from "../middlewares/rate-limit";
 import { assembleContext, generateReply, type TutorTurn } from "../lib/tutor";
 import { allocateTopics, generateOverallQuizQuestions, generateQuizQuestions } from "../lib/quiz";
 import { generateTopicOutline, pickPriorityCourse } from "../lib/courses";
+import { seedSampleCourse } from "../lib/sample-course";
 import { buildPlan } from "../lib/plan";
 import { applyQuizResult, touchStreak } from "../lib/mastery";
 import { retrieveRelevantChunks } from "../lib/documents";
@@ -140,6 +141,21 @@ router.patch("/profile", async (req, res) => {
 
   if (error) return res.status(500).json({ error: error.message });
 
+  // Seed the sample course exactly once, right as onboarding completes — a
+  // brand-new account with no courses of its own would otherwise land on a
+  // completely empty dashboard. Gated on "no courses yet" (rather than a
+  // separate "already seeded" flag) so it's naturally a no-op on any later
+  // call: once a course exists — sample or real — this never fires again.
+  if (input.onboardingCompleted === true) {
+    const { count } = await req.supabase!
+      .from("courses")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", req.user!.id);
+    if (!count) {
+      await seedSampleCourse(req.supabase!, req.user!.id);
+    }
+  }
+
   return res.json(UpdateProfileResponse.parse(toProfileResponse(data)));
 });
 
@@ -193,6 +209,7 @@ router.get("/dashboard", async (req, res) => {
       GetDashboardResponse.parse({
         greeting,
         courseName: "",
+        isSampleCourse: false,
         courseProgress: 0,
         strongestTopic: "",
         focusTopic: "",
@@ -254,6 +271,7 @@ router.get("/dashboard", async (req, res) => {
     GetDashboardResponse.parse({
       greeting,
       courseName: priorityCourse.name,
+      isSampleCourse: priorityCourse.isSample,
       courseProgress,
       strongestTopic,
       focusTopic,
@@ -284,6 +302,7 @@ function toCourseResponse(course: Record<string, any>, progress: number, topics:
     instructor: course.instructor ?? null,
     term: course.term ?? null,
     completedAt: course.completed_at ?? null,
+    isSample: Boolean(course.is_sample),
     progress,
     topics,
   };
@@ -295,7 +314,7 @@ router.get("/courses", async (req, res) => {
 
   let query = supabase
     .from("courses")
-    .select("id, name, level, completion_date, status, course_code, institution, instructor, term, completed_at")
+    .select("id, name, level, completion_date, status, course_code, institution, instructor, term, completed_at, is_sample")
     .eq("user_id", req.user!.id)
     .order("created_at", { ascending: true });
   if (statusFilter) query = query.eq("status", statusFilter);
@@ -349,7 +368,7 @@ router.post("/courses", async (req, res) => {
       instructor: input.instructor || null,
       term: input.term || null,
     })
-    .select("id, name, level, completion_date, status, course_code, institution, instructor, term, completed_at")
+    .select("id, name, level, completion_date, status, course_code, institution, instructor, term, completed_at, is_sample")
     .single();
 
   if (error) return res.status(500).json({ error: error.message });
@@ -405,7 +424,7 @@ router.patch("/courses/:courseId", async (req, res) => {
     .from("courses")
     .update(patch)
     .eq("id", req.params.courseId)
-    .select("id, name, level, completion_date, status, course_code, institution, instructor, term, completed_at")
+    .select("id, name, level, completion_date, status, course_code, institution, instructor, term, completed_at, is_sample")
     .maybeSingle();
 
   if (error) return res.status(500).json({ error: error.message });
@@ -438,7 +457,7 @@ router.post("/courses/:courseId/complete", async (req, res) => {
     .from("courses")
     .update({ status: "completed", completed_at: new Date().toISOString(), updated_at: new Date().toISOString() })
     .eq("id", req.params.courseId)
-    .select("id, name, level, completion_date, status, course_code, institution, instructor, term, completed_at")
+    .select("id, name, level, completion_date, status, course_code, institution, instructor, term, completed_at, is_sample")
     .maybeSingle();
 
   if (error) return res.status(500).json({ error: error.message });
@@ -474,7 +493,7 @@ async function setCourseStatus(
     .from("courses")
     .update({ status, updated_at: new Date().toISOString() })
     .eq("id", courseId)
-    .select("id, name, level, completion_date, status, course_code, institution, instructor, term, completed_at")
+    .select("id, name, level, completion_date, status, course_code, institution, instructor, term, completed_at, is_sample")
     .maybeSingle();
 
   if (error) throw error;

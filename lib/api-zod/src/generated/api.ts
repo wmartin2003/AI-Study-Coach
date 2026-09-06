@@ -34,6 +34,18 @@ export const SignupResponse = zod.object({
 
 
 /**
+ * @summary Join the closed-beta waitlist (public — no auth required)
+ */
+export const JoinWaitlistBody = zod.object({
+  "email": zod.string()
+})
+
+export const JoinWaitlistResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+/**
  * @summary Get the signed-in student's profile
  */
 export const GetProfileResponse = zod.object({
@@ -137,6 +149,7 @@ export const GetTutorConversationResponse = zod.object({
 export const GetDashboardResponse = zod.object({
   "greeting": zod.string(),
   "courseName": zod.string(),
+  "isSampleCourse": zod.boolean().describe('True when the course shown above is the hardcoded example seeded at onboarding.'),
   "courseProgress": zod.number(),
   "strongestTopic": zod.string(),
   "focusTopic": zod.string(),
@@ -183,6 +196,7 @@ export const ListCoursesResponseItem = zod.object({
   "instructor": zod.string().nullish(),
   "term": zod.string().nullish(),
   "completedAt": zod.string().nullish(),
+  "isSample": zod.boolean().describe('True for the hardcoded example course seeded when onboarding completes.'),
   "progress": zod.number(),
   "topics": zod.array(zod.object({
   "name": zod.string(),
@@ -220,6 +234,7 @@ export const CreateCourseResponse = zod.object({
   "instructor": zod.string().nullish(),
   "term": zod.string().nullish(),
   "completedAt": zod.string().nullish(),
+  "isSample": zod.boolean().describe('True for the hardcoded example course seeded when onboarding completes.'),
   "progress": zod.number(),
   "topics": zod.array(zod.object({
   "name": zod.string(),
@@ -260,6 +275,7 @@ export const UpdateCourseResponse = zod.object({
   "instructor": zod.string().nullish(),
   "term": zod.string().nullish(),
   "completedAt": zod.string().nullish(),
+  "isSample": zod.boolean().describe('True for the hardcoded example course seeded when onboarding completes.'),
   "progress": zod.number(),
   "topics": zod.array(zod.object({
   "name": zod.string(),
@@ -287,6 +303,7 @@ export const CompleteCourseResponse = zod.object({
   "instructor": zod.string().nullish(),
   "term": zod.string().nullish(),
   "completedAt": zod.string().nullish(),
+  "isSample": zod.boolean().describe('True for the hardcoded example course seeded when onboarding completes.'),
   "progress": zod.number(),
   "topics": zod.array(zod.object({
   "name": zod.string(),
@@ -314,6 +331,7 @@ export const ArchiveCourseResponse = zod.object({
   "instructor": zod.string().nullish(),
   "term": zod.string().nullish(),
   "completedAt": zod.string().nullish(),
+  "isSample": zod.boolean().describe('True for the hardcoded example course seeded when onboarding completes.'),
   "progress": zod.number(),
   "topics": zod.array(zod.object({
   "name": zod.string(),
@@ -341,6 +359,7 @@ export const ReactivateCourseResponse = zod.object({
   "instructor": zod.string().nullish(),
   "term": zod.string().nullish(),
   "completedAt": zod.string().nullish(),
+  "isSample": zod.boolean().describe('True for the hardcoded example course seeded when onboarding completes.'),
   "progress": zod.number(),
   "topics": zod.array(zod.object({
   "name": zod.string(),

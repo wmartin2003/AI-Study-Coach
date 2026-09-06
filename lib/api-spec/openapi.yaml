@@ -44,6 +44,24 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AccountCreated"
+  /waitlist:
+    post:
+      operationId: joinWaitlist
+      tags: [study]
+      summary: Join the closed-beta waitlist (public — no auth required)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WaitlistInput"
+      responses:
+        "201":
+          description: Added to the waitlist
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WaitlistJoined"
   /profile:
     get:
       operationId: getProfile
@@ -627,6 +645,16 @@ components:
       required: [ok]
       properties:
         ok: { type: boolean }
+    WaitlistInput:
+      type: object
+      required: [email]
+      properties:
+        email: { type: string }
+    WaitlistJoined:
+      type: object
+      required: [ok]
+      properties:
+        ok: { type: boolean }
     Profile:
       type: object
       required: [id, fullName, onboardingCompleted]
@@ -704,7 +732,7 @@ components:
         masteryScore: { type: number }
     Course:
       type: object
-      required: [id, name, completionDate, level, status, progress, topics]
+      required: [id, name, completionDate, level, status, isSample, progress, topics]
       properties:
         id: { type: string }
         name: { type: string }
@@ -716,6 +744,7 @@ components:
         instructor: { type: ["string", "null"] }
         term: { type: ["string", "null"] }
         completedAt: { type: ["string", "null"] }
+        isSample: { type: boolean, description: "True for the hardcoded example course seeded when onboarding completes." }
         progress: { type: number }
         topics:
           type: array
@@ -764,10 +793,11 @@ components:
         eventDate: { type: string }
     Dashboard:
       type: object
-      required: [greeting, courseName, courseProgress, strongestTopic, focusTopic, focusReason, tasks, xp, streak, questionsThisWeek, masteredTopics, upcomingEvents]
+      required: [greeting, courseName, isSampleCourse, courseProgress, strongestTopic, focusTopic, focusReason, tasks, xp, streak, questionsThisWeek, masteredTopics, upcomingEvents]
       properties:
         greeting: { type: string }
         courseName: { type: string }
+        isSampleCourse: { type: boolean, description: "True when the course shown above is the hardcoded example seeded at onboarding." }
         courseProgress: { type: number }
         strongestTopic: { type: string }
         focusTopic: { type: string }

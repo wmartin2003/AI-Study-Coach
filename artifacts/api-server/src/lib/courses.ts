@@ -6,6 +6,7 @@ export type PriorityCourse = {
   name: string;
   level: string;
   nearestEventDate: string | null;
+  isSample: boolean;
 };
 
 /**
@@ -21,7 +22,7 @@ export async function pickPriorityCourse(
 ): Promise<PriorityCourse | null> {
   const { data: courses } = await supabase
     .from("courses")
-    .select("id, name, level, completion_date, created_at")
+    .select("id, name, level, completion_date, created_at, is_sample")
     .eq("user_id", userId)
     .eq("status", "active");
 
@@ -41,7 +42,13 @@ export async function pickPriorityCourse(
 
   if (nearestEvent) {
     const course = courses.find((c) => c.id === nearestEvent.course_id)!;
-    return { id: course.id, name: course.name, level: course.level, nearestEventDate: nearestEvent.event_date };
+    return {
+      id: course.id,
+      name: course.name,
+      level: course.level,
+      nearestEventDate: nearestEvent.event_date,
+      isSample: Boolean(course.is_sample),
+    };
   }
 
   const byCompletionDate = [...courses].sort((a, b) => {
@@ -51,7 +58,7 @@ export async function pickPriorityCourse(
   });
 
   const chosen = byCompletionDate[0];
-  return { id: chosen.id, name: chosen.name, level: chosen.level, nearestEventDate: null };
+  return { id: chosen.id, name: chosen.name, level: chosen.level, nearestEventDate: null, isSample: Boolean(chosen.is_sample) };
 }
 
 export async function generateTopicOutline(userId: string, courseName: string, level: string): Promise<string[]> {

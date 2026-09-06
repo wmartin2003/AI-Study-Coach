@@ -50,3 +50,5 @@ export * from './topicStudyMaterial';
 export * from './tutorMessage';
 export * from './tutorMessageInput';
 export * from './upcomingEvent';
+export * from './waitlistInput';
+export * from './waitlistJoined';

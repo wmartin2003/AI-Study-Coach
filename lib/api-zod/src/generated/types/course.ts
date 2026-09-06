@@ -24,6 +24,8 @@ export interface Course {
   term?: string | null;
   /** @nullable */
   completedAt?: string | null;
+  /** True for the hardcoded example course seeded when onboarding completes. */
+  isSample: boolean;
   progress: number;
   topics: CourseTopic[];
 }

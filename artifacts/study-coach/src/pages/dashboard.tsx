@@ -1,4 +1,4 @@
-import { ArrowRight, BookOpen, Calendar, Check, ChevronDown, Clock3, Lightbulb, Plus, RotateCcw, Target, Trophy, Zap } from "lucide-react";
+import { ArrowRight, BookOpen, Calendar, Check, ChevronDown, Clock3, Lightbulb, Plus, RotateCcw, Sparkles, Target, Trophy, X, Zap } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link } from "wouter";
 import { getGetDashboardQueryKey, useGetDashboard } from "@workspace/api-client-react";
@@ -7,6 +7,7 @@ import { AppShell, Button, EmptyState, ErrorNotice, PageHeading, ProgressBar, Sk
 import { formatDate } from "@/lib/format";
 
 const COLLAPSED_TASK_COUNT = 3;
+const SAMPLE_BANNER_DISMISSED_KEY = "sample-course-banner-dismissed";
 
 export default function DashboardPage() {
   const dashboardQuery = useGetDashboard({ query: { queryKey: getGetDashboardQueryKey() } });
@@ -17,11 +18,33 @@ export default function DashboardPage() {
   const [planExpanded, setPlanExpanded] = useState(false);
   const visibleTasks = planExpanded ? tasks : tasks.slice(0, COLLAPSED_TASK_COUNT);
   const hiddenCount = tasks.length - COLLAPSED_TASK_COUNT;
+  const [bannerDismissed, setBannerDismissed] = useState(
+    () => typeof window !== "undefined" && window.localStorage.getItem(SAMPLE_BANNER_DISMISSED_KEY) === "1",
+  );
+  const dismissBanner = () => {
+    setBannerDismissed(true);
+    window.localStorage.setItem(SAMPLE_BANNER_DISMISSED_KEY, "1");
+  };
 
   return <AppShell>
     <div className="coach-rise">
       <PageHeading eyebrow={dayLabel} title={data?.greeting || "Good morning"} description="Your next best step is ready when you are."
         action={<Link href="/tutor" data-testid="link-dashboard-tutor" className="hidden items-center gap-2 text-[13px] font-semibold text-primary transition-transform hover:translate-x-0.5 sm:flex">Need a nudge? <ArrowRight className="h-4 w-4" /></Link>} />
+      {data?.isSampleCourse && !bannerDismissed && (
+        <div className="mb-6 flex items-start gap-3 rounded-2xl border border-accent/30 bg-accent/10 p-4 sm:items-center" data-testid="banner-sample-course">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent/25 text-primary"><Sparkles className="h-4 w-4" /></div>
+          <div className="min-w-0 flex-1">
+            <p className="text-[13px] font-semibold text-primary">This is an example course, so you can see how your plan works.</p>
+            <p className="mt-0.5 text-[12px] text-muted-foreground">
+              Add your real course and archive this one from its course page whenever you're ready.
+            </p>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <Link href="/courses/new" data-testid="link-sample-banner-add-course" className="whitespace-nowrap rounded-lg px-3 py-1.5 text-[12px] font-bold text-primary hover:bg-accent/20">Add your course</Link>
+            <button type="button" onClick={dismissBanner} aria-label="Dismiss" data-testid="button-dismiss-sample-banner" className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent/20 hover:text-primary"><X className="h-4 w-4" /></button>
+          </div>
+        </div>
+      )}
       {dashboardQuery.isLoading ? <DashboardSkeleton /> : dashboardQuery.isError ? <ErrorNotice onRetry={() => dashboardQuery.refetch()} /> : !data?.courseName ? (
         <EmptyState title="Add your first course" description="Once you add a course, your coach will build a daily plan and track your progress here." action={<Link href="/courses/new" data-testid="link-dashboard-add-course"><Button><Plus className="h-4 w-4" /> Add a course</Button></Link>} />
       ) : <div className="space-y-6">

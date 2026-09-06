@@ -11,6 +11,8 @@ import type { UpcomingEvent } from './upcomingEvent';
 export interface Dashboard {
   greeting: string;
   courseName: string;
+  /** True when the course shown above is the hardcoded example seeded at onboarding. */
+  isSampleCourse: boolean;
   courseProgress: number;
   strongestTopic: string;
   focusTopic: string;
