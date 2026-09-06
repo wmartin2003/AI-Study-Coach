@@ -20,18 +20,18 @@ export default function DashboardPage() {
       {dashboardQuery.isLoading ? <DashboardSkeleton /> : dashboardQuery.isError ? <ErrorNotice onRetry={() => dashboardQuery.refetch()} /> : !data?.courseName ? (
         <EmptyState title="Add your first course" description="Once you add a course, your coach will build a daily plan and track your progress here." action={<Link href="/courses/new" data-testid="link-dashboard-add-course"><Button><Plus className="h-4 w-4" /> Add a course</Button></Link>} />
       ) : <div className="space-y-6">
-        <section className="relative overflow-hidden rounded-[26px] bg-primary p-6 text-primary-foreground shadow-xl shadow-primary/10 sm:p-8">
-          <div className="absolute -right-8 -top-20 h-64 w-64 rounded-full border-[36px] border-accent/15" /><div className="absolute -bottom-24 right-28 h-48 w-48 rounded-full border-[20px] border-primary-foreground/5" />
+        <section className="relative overflow-hidden rounded-[26px] bg-sidebar p-6 text-sidebar-foreground shadow-xl shadow-sidebar/20 sm:p-8">
+          <div className="absolute -right-8 -top-20 h-64 w-64 rounded-full border-[36px] border-accent/15" /><div className="absolute -bottom-24 right-28 h-48 w-48 rounded-full border-[20px] border-sidebar-foreground/5" />
           <div className="relative grid gap-8 lg:grid-cols-[1.1fr_.9fr] lg:items-center">
-            <div><div className="mb-5 flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.16em] text-primary-foreground/55"><span className="h-1.5 w-1.5 rounded-full bg-accent" /> Your study desk</div>
+            <div><div className="mb-5 flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.16em] text-sidebar-foreground/55"><span className="h-1.5 w-1.5 rounded-full bg-accent" /> Your study desk</div>
               <p className="max-w-md font-display text-3xl font-semibold leading-[1.1] tracking-[-0.04em] sm:text-[40px]">One clear session<br />for <span className="text-accent">{data.courseName || "your course"}</span>.</p>
-              <p className="mt-4 max-w-md text-sm leading-relaxed text-primary-foreground/65">Start with {data.focusTopic || "your focus topic"} while your attention is fresh. You only need to begin.</p>
+              <p className="mt-4 max-w-md text-sm leading-relaxed text-sidebar-foreground/65">Start with {data.focusTopic || "your focus topic"} while your attention is fresh. You only need to begin.</p>
               <Link href="/course" data-testid="link-start-session" className="mt-7 inline-flex items-center gap-2 rounded-xl bg-accent px-4 py-3 text-[13px] font-bold text-accent-foreground transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-accent/20">Start today's session <ArrowRight className="h-4 w-4" /></Link>
             </div>
-            <div className="rounded-2xl border border-primary-foreground/10 bg-primary-foreground/[.06] p-5 backdrop-blur-sm">
-              <div className="mb-5 flex items-center justify-between"><span className="text-[12px] text-primary-foreground/60">Course progress</span><span className="font-mono-ui text-[12px] text-accent">{data.courseProgress}%</span></div>
-              <ProgressBar value={data.courseProgress} className="[&>div]:bg-accent bg-primary-foreground/10" />
-              <div className="mt-5 flex items-end justify-between"><div><p className="text-[11px] text-primary-foreground/45">Strongest so far</p><p className="mt-1 text-sm font-semibold">{data.strongestTopic || "Keep building"}</p></div><Trophy className="h-5 w-5 text-accent" /></div>
+            <div className="rounded-2xl border border-sidebar-foreground/10 bg-sidebar-foreground/[.06] p-5 backdrop-blur-sm">
+              <div className="mb-5 flex items-center justify-between"><span className="text-[12px] text-sidebar-foreground/60">Course progress</span><span className="font-mono-ui text-[12px] text-accent">{data.courseProgress}%</span></div>
+              <ProgressBar value={data.courseProgress} className="[&>div]:bg-accent bg-sidebar-foreground/10" />
+              <div className="mt-5 flex items-end justify-between"><div><p className="text-[11px] text-sidebar-foreground/45">Strongest so far</p><p className="mt-1 text-sm font-semibold">{data.strongestTopic || "Keep building"}</p></div><Trophy className="h-5 w-5 text-accent" /></div>
             </div>
           </div>
         </section>

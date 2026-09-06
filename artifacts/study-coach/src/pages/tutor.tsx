@@ -139,7 +139,7 @@ export default function TutorPage() {
           <section className="flex min-h-[600px] flex-col rounded-[24px] border border-border bg-card">
             <div className="flex items-center justify-between border-b border-border px-5 py-4 sm:px-7">
               <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-accent"><Brain className="h-4 w-4" /></div>
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sidebar text-accent"><Brain className="h-4 w-4" /></div>
                 <div>
                   <p className="text-[13px] font-semibold text-primary">Study Coach</p>
                   <p className="font-mono-ui text-[10px] text-muted-foreground">Guiding, not giving away</p>

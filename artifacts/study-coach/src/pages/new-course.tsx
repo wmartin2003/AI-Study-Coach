@@ -207,9 +207,9 @@ export default function NewCoursePage() {
                 </p>
               )}
             </div>
-            <div className="rounded-[24px] bg-primary p-5 text-primary-foreground">
+            <div className="rounded-[24px] bg-sidebar p-5 text-sidebar-foreground">
               <p className="font-display text-xl font-semibold leading-tight">A good plan starts small.</p>
-              <p className="mt-2 text-[12px] leading-relaxed text-primary-foreground/60">Add the class now. You can build the rest as you go.</p>
+              <p className="mt-2 text-[12px] leading-relaxed text-sidebar-foreground/60">Add the class now. You can build the rest as you go.</p>
             </div>
           </aside>
         </div>

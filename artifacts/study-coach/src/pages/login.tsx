@@ -64,7 +64,7 @@ export default function LoginPage() {
     <div className="grain flex min-h-[100dvh] items-center justify-center bg-background px-5 py-10">
       <div className="w-full max-w-[420px]">
         <div className="mb-8 flex items-center justify-center gap-3" data-testid="brand-study-coach">
-          <div className="flex h-9 w-9 items-center justify-center rounded-[13px] bg-accent text-primary shadow-sm">
+          <div className="flex h-9 w-9 items-center justify-center rounded-[13px] bg-accent text-accent-foreground shadow-sm">
             <BookOpen className="h-[18px] w-[18px]" strokeWidth={2.5} />
           </div>
           <span className="font-display text-[19px] font-semibold tracking-[-0.02em] text-primary">study coach</span>

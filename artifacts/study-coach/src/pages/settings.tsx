@@ -4,6 +4,7 @@ import { AlertTriangle, ArrowRight, Check, KeyRound, Loader2, Monitor, Moon, Sun
 import { getGetProfileQueryKey, useDeleteAccount, useGetProfile, useUpdateProfile } from "@workspace/api-client-react";
 import { AppShell, Button, ErrorNotice, PageHeading, SkeletonBlock } from "@/components/app-shell";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/lib/auth-context";
 import { useTheme, type ThemePreference } from "@/lib/theme";
 import { supabase } from "@/lib/supabase";
@@ -63,22 +64,18 @@ function PersonalizationSection() {
             your stored profile.
           </p>
         </div>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={enabled}
+        <Switch
+          checked={enabled}
           data-testid="switch-personalization"
-          onClick={() =>
+          onCheckedChange={(next) =>
             updateProfile.mutate(
-              { data: { personalizationEnabled: !enabled } },
+              { data: { personalizationEnabled: next } },
               { onSuccess: (profile) => queryClient.setQueryData(getGetProfileQueryKey(), profile) },
             )
           }
           disabled={profileQuery.isLoading || updateProfile.isPending}
-          className={`relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-50 ${enabled ? "bg-primary" : "bg-muted"}`}
-        >
-          <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-card shadow transition-transform ${enabled ? "translate-x-[22px]" : "translate-x-0.5"}`} />
-        </button>
+          className="shrink-0"
+        />
       </div>
     </SettingsSection>
   );

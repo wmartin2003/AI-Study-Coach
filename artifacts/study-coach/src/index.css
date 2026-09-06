@@ -217,8 +217,15 @@
   --popover: 164 20% 16%;
   --popover-foreground: 43 38% 93%;
   --popover-border: 160 15% 27%;
-  --primary: 48 86% 65%;
-  --primary-foreground: 165 25% 11%;
+  /*
+   * NOTE: this used to equal --accent (both 48 86% 65%), which made every
+   * heading/label using text-primary render in the same yellow as accent
+   * highlights, and made the logo chip's icon (bg-accent + text-primary)
+   * disappear entirely. --primary is the app's "ink" color — it must stay
+   * distinct from --accent, which is reserved for CTAs/highlights.
+   */
+  --primary: 45 35% 95%;
+  --primary-foreground: 165 30% 14%;
   --secondary: 160 18% 23%;
   --secondary-foreground: 43 38% 93%;
   --muted: 160 18% 20%;

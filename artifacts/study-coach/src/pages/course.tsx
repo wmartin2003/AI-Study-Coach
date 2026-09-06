@@ -200,13 +200,13 @@ export default function CoursePage() {
                   </div>
                 )}
               </div>
-              <div className="rounded-[22px] bg-primary p-5 text-primary-foreground">
+              <div className="rounded-[22px] bg-sidebar p-5 text-sidebar-foreground">
                 <div className="mb-4 flex items-center gap-2 text-accent">
                   <Sparkles className="h-4 w-4" />
                   <span className="font-mono-ui text-[10px] uppercase tracking-[0.14em]">Coach's note</span>
                 </div>
                 <p className="font-display text-[21px] font-semibold leading-tight">You don't need to cover everything today.</p>
-                <p className="mt-3 text-[12px] leading-relaxed text-primary-foreground/60">Follow the path on the right. It is shaped around your recent answers.</p>
+                <p className="mt-3 text-[12px] leading-relaxed text-sidebar-foreground/60">Follow the path on the right. It is shaped around your recent answers.</p>
               </div>
             </aside>
 
