@@ -75,6 +75,13 @@ export default function TutorPage() {
   };
 
   const studyingLabel = selectedCourse ? `${selectedCourse.name}${topicName ? ` · ${topicName}` : ""}` : "General questions";
+  const activeTopicMastery = selectedCourse?.topics.find((topic) => topic.name === topicName)?.masteryLevel ?? null;
+  const promptSuggestions = buildPromptSuggestions({
+    hasMessages: messages.length > 0,
+    courseName: selectedCourse?.name ?? null,
+    topicName,
+    masteryLevel: activeTopicMastery,
+  });
 
   return (
     <AppShell>
@@ -205,12 +212,14 @@ export default function TutorPage() {
           </section>
           <aside className="space-y-4">
             <div className="rounded-[22px] border border-accent/30 bg-accent/15 p-5">
-              <div className="mb-3 flex items-center gap-2 text-primary"><Lightbulb className="h-4 w-4" /><p className="font-mono-ui text-[10px] uppercase tracking-[0.15em]">Try a prompt</p></div>
-              <p className="text-[12px] leading-relaxed text-muted-foreground">Start with what you know. The tutor will meet you there.</p>
+              <div className="mb-3 flex items-center gap-2 text-primary"><Lightbulb className="h-4 w-4" /><p className="font-mono-ui text-[10px] uppercase tracking-[0.15em]">{messages.length === 0 ? "Start the conversation" : "Try a follow-up"}</p></div>
+              <p className="text-[12px] leading-relaxed text-muted-foreground">
+                {messages.length === 0 ? "Not sure how to open? Pick one — it's tailored to what you're studying." : "Keep going, or steer the conversation somewhere new."}
+              </p>
               <div className="mt-4 space-y-2">
-                <PromptButton text="Can you explain this a different way?" onClick={submit} />
-                <PromptButton text="Give me a hint" onClick={submit} />
-                <PromptButton text="Quiz me on this" onClick={submit} />
+                {promptSuggestions.map((text) => (
+                  <PromptButton key={text} text={text} onClick={submit} />
+                ))}
               </div>
             </div>
             <div className="flex items-start gap-2.5 rounded-2xl px-2 py-1 text-[11px] leading-relaxed text-muted-foreground">
@@ -222,6 +231,44 @@ export default function TutorPage() {
       </div>
     </AppShell>
   );
+}
+
+/**
+ * A follow-up ("give me a hint", "explain that differently") only makes
+ * sense once there's something on screen to follow up on — with an empty
+ * chat those read as non-sequiturs. So an empty conversation gets chat
+ * *starters* instead, tailored to whatever course/topic is currently
+ * selected (and, once a topic is picked, nudged by how well the student
+ * already knows it) rather than the same three generic lines regardless of
+ * context.
+ */
+function buildPromptSuggestions(options: {
+  hasMessages: boolean;
+  courseName: string | null;
+  topicName: string;
+  masteryLevel: string | null;
+}): string[] {
+  const { hasMessages, courseName, topicName, masteryLevel } = options;
+
+  if (hasMessages) {
+    return ["Can you explain that a different way?", "Give me a hint instead of the answer", "Quiz me on what we just covered"];
+  }
+
+  if (courseName && topicName) {
+    const opener =
+      masteryLevel === "proficient" || masteryLevel === "mastered"
+        ? `Give me a challenging question on ${topicName}`
+        : masteryLevel === "learning" || masteryLevel === "developing"
+          ? `Help me get more comfortable with ${topicName}`
+          : `Can you introduce me to ${topicName}?`;
+    return [opener, `Walk me through ${topicName} step by step`, `Quiz me on ${topicName}`];
+  }
+
+  if (courseName) {
+    return [`What's the most important idea in ${courseName} right now?`, `Can you walk me through ${courseName} from the basics?`, `Quiz me on ${courseName}`];
+  }
+
+  return ["I'm stuck on something — can you help me work through it?", "Can you walk me through a concept from scratch?", "Quiz me to see what I remember"];
 }
 
 function PromptButton({ text, onClick }: { text: string; onClick: (value: string) => void }) {
