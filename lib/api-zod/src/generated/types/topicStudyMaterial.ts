@@ -18,4 +18,9 @@ export interface TopicStudyMaterial {
   groundedInMaterials: boolean;
   sources: TopicMaterialSource[];
   generatedAt: string;
+  /**
+     * When the student last marked this guide done. Reset to null whenever the guide is regenerated, since that's new content they haven't confirmed yet.
+     * @nullable
+     */
+  completedAt: string | null;
 }

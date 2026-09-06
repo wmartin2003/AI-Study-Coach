@@ -475,7 +475,8 @@ export const GetTopicStudyMaterialResponse = zod.object({
   "fileName": zod.string(),
   "chunkCount": zod.number()
 })),
-  "generatedAt": zod.string()
+  "generatedAt": zod.string(),
+  "completedAt": zod.string().nullable().describe('When the student last marked this guide done. Reset to null whenever the guide is regenerated, since that\'s new content they haven\'t confirmed yet.')
 })
 
 
@@ -501,7 +502,22 @@ export const RegenerateTopicStudyMaterialResponse = zod.object({
   "fileName": zod.string(),
   "chunkCount": zod.number()
 })),
-  "generatedAt": zod.string()
+  "generatedAt": zod.string(),
+  "completedAt": zod.string().nullable().describe('When the student last marked this guide done. Reset to null whenever the guide is regenerated, since that\'s new content they haven\'t confirmed yet.')
+})
+
+
+/**
+ * @summary Mark a topic's study guide as done, awarding XP the first time today
+ */
+export const CompleteTopicStudyMaterialParams = zod.object({
+  "courseId": zod.coerce.string(),
+  "topicName": zod.coerce.string()
+})
+
+export const CompleteTopicStudyMaterialResponse = zod.object({
+  "completedAt": zod.string(),
+  "xpAwarded": zod.number().describe('0 if this topic\'s guide was already marked done earlier today.')
 })
 
 

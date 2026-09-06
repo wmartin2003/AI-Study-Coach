@@ -23,6 +23,7 @@ import type {
   Achievement,
   ActiveQuiz,
   CompletedQuiz,
+  CompletedStudyMaterial,
   ConversationHistory,
   Course,
   CourseEvent,
@@ -1571,6 +1572,79 @@ export const useRegenerateTopicStudyMaterial = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getRegenerateTopicStudyMaterialMutationOptions(options));
+    }
+
+export const getCompleteTopicStudyMaterialUrl = (courseId: string,
+    topicName: string,) => {
+
+
+
+
+  return `/api/courses/${courseId}/topics/${topicName}/study-material/complete`
+}
+
+/**
+ * @summary Mark a topic's study guide as done, awarding XP the first time today
+ */
+export const completeTopicStudyMaterial = async (courseId: string,
+    topicName: string, options?: Parameters<typeof customFetch>[1]): Promise<CompletedStudyMaterial> => {
+
+  return customFetch<CompletedStudyMaterial>(getCompleteTopicStudyMaterialUrl(courseId,topicName),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getCompleteTopicStudyMaterialMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeTopicStudyMaterial>>, TError,{courseId: string;topicName: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof completeTopicStudyMaterial>>, TError,{courseId: string;topicName: string}, TContext> => {
+
+const mutationKey = ['completeTopicStudyMaterial'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof completeTopicStudyMaterial>>, {courseId: string;topicName: string}> = (props) => {
+          const {courseId,topicName} = props ?? {};
+
+          return  completeTopicStudyMaterial(courseId,topicName,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CompleteTopicStudyMaterialMutationResult = NonNullable<Awaited<ReturnType<typeof completeTopicStudyMaterial>>>
+
+    export type CompleteTopicStudyMaterialMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Mark a topic's study guide as done, awarding XP the first time today
+ */
+export const useCompleteTopicStudyMaterial = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeTopicStudyMaterial>>, TError,{courseId: string;topicName: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof completeTopicStudyMaterial>>,
+        TError,
+        {courseId: string;topicName: string},
+        TContext
+      > => {
+      return useMutation(getCompleteTopicStudyMaterialMutationOptions(options));
     }
 
 export const getSearchInstitutionsUrl = (params: SearchInstitutionsParams,) => {

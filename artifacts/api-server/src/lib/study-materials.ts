@@ -1,6 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { generateStructured } from "./anthropic";
 import { retrieveRelevantChunks } from "./documents";
+import { touchStreak } from "./mastery";
+
+// Deliberately less than a correct quiz answer (+10) and more than a wrong
+// one (+3) — a real but modest reward for engaging with a guide, since
+// nothing here is actually assessed the way a quiz question is.
+const STUDY_GUIDE_XP = 8;
 
 export type TopicKeyTerm = { term: string; definition: string };
 export type TopicMaterialSource = { fileName: string; chunkCount: number };
@@ -17,6 +23,9 @@ export type TopicStudyMaterial = {
   groundedInMaterials: boolean;
   sources: TopicMaterialSource[];
   generatedAt: string;
+  // When the student last marked this guide done. Reset to null whenever
+  // the guide is regenerated — that's content they haven't confirmed yet.
+  completedAt: string | null;
 };
 
 type GeneratedGuide = {
@@ -89,6 +98,7 @@ function toResponse(topicName: string, row: Record<string, any>): TopicStudyMate
     groundedInMaterials: Boolean(row["grounded_in_materials"]),
     sources: (row["sources"] as TopicMaterialSource[]) ?? [],
     generatedAt: row["generated_at"],
+    completedAt: row["completed_at"] ?? null,
   };
 }
 
@@ -172,6 +182,7 @@ export async function getOrGenerateTopicStudyMaterial(
     source_document_count: documentIds.length,
     source_chunk_count: chunkCount,
     generated_at: now,
+    completed_at: null,
     updated_at: now,
   };
 
@@ -183,4 +194,52 @@ export async function getOrGenerateTopicStudyMaterial(
   if (error || !saved) throw error ?? new Error("Failed to save the generated study guide");
 
   return toResponse(topic.name, saved);
+}
+
+/**
+ * Marks a topic's study guide done. Awards XP (and counts toward the daily
+ * streak) only the first time this happens for that guide each day — an
+ * idempotent "I studied this" action, not something worth gaming by
+ * reopening the dialog repeatedly.
+ */
+export async function markTopicStudyMaterialComplete(
+  supabase: SupabaseClient,
+  userId: string,
+  courseId: string,
+  topicName: string,
+): Promise<{ completedAt: string; xpAwarded: number } | null> {
+  const { data: topic } = await supabase
+    .from("topics")
+    .select("id")
+    .eq("course_id", courseId)
+    .eq("user_id", userId)
+    .ilike("name", topicName)
+    .maybeSingle();
+  if (!topic) return null;
+
+  const { data: material } = await supabase
+    .from("topic_study_materials")
+    .select("completed_at")
+    .eq("topic_id", topic.id)
+    .maybeSingle();
+  if (!material) return null; // hasn't been generated yet — nothing to mark done
+
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const alreadyCompletedToday = Boolean(material.completed_at) && new Date(material.completed_at as string) >= todayStart;
+  if (alreadyCompletedToday) {
+    return { completedAt: material.completed_at as string, xpAwarded: 0 };
+  }
+
+  const now = new Date().toISOString();
+  await supabase.from("topic_study_materials").update({ completed_at: now, updated_at: now }).eq("topic_id", topic.id);
+
+  const { data: stats } = await supabase.from("user_stats").select("xp").eq("user_id", userId).maybeSingle();
+  await supabase
+    .from("user_stats")
+    .update({ xp: (stats?.xp ?? 0) + STUDY_GUIDE_XP, updated_at: now })
+    .eq("user_id", userId);
+  await touchStreak(supabase, userId);
+
+  return { completedAt: now, xpAwarded: STUDY_GUIDE_XP };
 }

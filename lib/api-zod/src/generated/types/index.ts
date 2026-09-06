@@ -9,6 +9,7 @@
 export * from './achievement';
 export * from './activeQuiz';
 export * from './completedQuiz';
+export * from './completedStudyMaterial';
 export * from './conversationHistory';
 export * from './conversationMessage';
 export * from './course';

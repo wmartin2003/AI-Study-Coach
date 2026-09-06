@@ -25,6 +25,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "wouter";
 import {
+  getGetDashboardQueryKey,
   getGetTopicStudyMaterialQueryKey,
   getGetTutorConversationQueryKey,
   getListCourseDocumentsQueryKey,
@@ -32,6 +33,7 @@ import {
   getListEventsQueryKey,
   useArchiveCourse,
   useCompleteCourse,
+  useCompleteTopicStudyMaterial,
   useConfirmExtraction,
   useCreateEvent,
   useDeleteDocument,
@@ -53,6 +55,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { supabase } from "@/lib/supabase";
 import { queryClient } from "@/lib/query-client";
 import { formatDate } from "@/lib/format";
+import { toast } from "@/hooks/use-toast";
 
 type StatusFilter = "active" | "completed" | "archived";
 
@@ -541,6 +544,15 @@ function SourceBars({ sources }: { sources: { fileName: string; chunkCount: numb
   );
 }
 
+/** Matches the daily-reset semantics used everywhere else in the plan — a
+ * guide completed yesterday shouldn't read as permanently "done" forever. */
+function isCompletedToday(completedAt: string | null): boolean {
+  if (!completedAt) return false;
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  return new Date(completedAt) >= todayStart;
+}
+
 function TopicStudyGuideDialog({
   courseId,
   topic,
@@ -553,7 +565,27 @@ function TopicStudyGuideDialog({
   const queryKey = getGetTopicStudyMaterialQueryKey(courseId, topic.name);
   const materialQuery = useGetTopicStudyMaterial(courseId, topic.name, { query: { queryKey } });
   const regenerate = useRegenerateTopicStudyMaterial();
+  const complete = useCompleteTopicStudyMaterial();
   const material = materialQuery.data;
+  const done = isCompletedToday(material?.completedAt ?? null);
+
+  const markDone = () => {
+    if (!material) return;
+    complete.mutate(
+      { courseId, topicName: topic.name },
+      {
+        onSuccess: (result) => {
+          queryClient.setQueryData(queryKey, { ...material, completedAt: result.completedAt });
+          queryClient.invalidateQueries({ queryKey: getGetDashboardQueryKey() });
+          toast(
+            result.xpAwarded > 0
+              ? { title: "Study guide complete!", description: `+${result.xpAwarded} XP earned` }
+              : { title: "Already marked done today", description: "Come back tomorrow for more XP." },
+          );
+        },
+      },
+    );
+  };
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
@@ -654,9 +686,14 @@ function TopicStudyGuideDialog({
           <Link href={`/tutor?course=${courseId}`} onClick={onClose} data-testid="link-study-guide-tutor" className="text-[12px] font-semibold text-primary hover:underline">
             Ask the tutor about this →
           </Link>
-          <button type="button" onClick={onClose} className="rounded-xl px-4 py-2.5 text-[13px] font-semibold text-muted-foreground hover:bg-muted">
-            Close
-          </button>
+          <Button
+            onClick={done ? onClose : markDone}
+            disabled={complete.isPending || !material}
+            variant={done ? "secondary" : "primary"}
+            testId="button-complete-study-guide"
+          >
+            {complete.isPending ? "Saving..." : done ? <>Completed <Check className="h-3.5 w-3.5" /></> : "Mark as done"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -355,6 +355,27 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TopicStudyMaterial"
+  /courses/{courseId}/topics/{topicName}/study-material/complete:
+    post:
+      operationId: completeTopicStudyMaterial
+      tags: [study]
+      summary: Mark a topic's study guide as done, awarding XP the first time today
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: topicName
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Completion result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompletedStudyMaterial"
   /institutions/search:
     get:
       operationId: searchInstitutions
@@ -937,7 +958,7 @@ components:
         chunkCount: { type: number }
     TopicStudyMaterial:
       type: object
-      required: [topicName, summary, keyPoints, keyTerms, nextStep, groundedInMaterials, sources, generatedAt]
+      required: [topicName, summary, keyPoints, keyTerms, nextStep, groundedInMaterials, sources, generatedAt, completedAt]
       properties:
         topicName: { type: string }
         summary: { type: string }
@@ -955,6 +976,15 @@ components:
           type: array
           items: { $ref: "#/components/schemas/TopicMaterialSource" }
         generatedAt: { type: string }
+        completedAt:
+          type: ["string", "null"]
+          description: When the student last marked this guide done. Reset to null whenever the guide is regenerated, since that's new content they haven't confirmed yet.
+    CompletedStudyMaterial:
+      type: object
+      required: [completedAt, xpAwarded]
+      properties:
+        completedAt: { type: string }
+        xpAwarded: { type: number, description: "0 if this topic's guide was already marked done earlier today." }
     Achievement:
       type: object
       required: [id, key, title, description, courseName, courseCode, earnedAt]
