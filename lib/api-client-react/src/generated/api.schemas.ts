@@ -201,12 +201,54 @@ export interface TutorMessage {
 
 export interface QuizQuestion {
   id: string;
+  quizId: string;
+  courseId: string;
+  courseName: string;
   number: number;
   total: number;
+  /** This question's own topic — every question in an overall quiz can differ. */
   topic: string;
   question: string;
   options: string[];
   difficulty: string;
+}
+
+/**
+ * Same shape as QuizQuestion; every property is absent when there's no active quiz to resume.
+ */
+export interface ActiveQuiz {
+  id?: string;
+  quizId?: string;
+  courseId?: string;
+  courseName?: string;
+  number?: number;
+  total?: number;
+  topic?: string;
+  question?: string;
+  options?: string[];
+  difficulty?: string;
+}
+
+/**
+ * For an overall quiz only: "balanced" spreads questions evenly, "weak-spots" weights toward lower-mastery topics. Ignored for a topic-specific quiz.
+ */
+export type QuizStartInputFocus = typeof QuizStartInputFocus[keyof typeof QuizStartInputFocus];
+
+
+export const QuizStartInputFocus = {
+  balanced: 'balanced',
+  'weak-spots': 'weak-spots',
+} as const;
+
+export interface QuizStartInput {
+  courseId: string;
+  /**
+     * Omit or pass null for an overall quiz spanning every topic in the course.
+     * @nullable
+     */
+  topicName?: string | null;
+  /** For an overall quiz only: "balanced" spreads questions evenly, "weak-spots" weights toward lower-mastery topics. Ignored for a topic-specific quiz. */
+  focus?: QuizStartInputFocus;
 }
 
 export interface QuizAnswerInput {
@@ -218,7 +260,55 @@ export interface QuizFeedback {
   correct: boolean;
   explanation: string;
   xp: number;
-  nextTopic: string;
+  /** The topic this specific question covered. */
+  topicName: string;
+  quizCompleted: boolean;
+  /** Running total of correct answers in this quiz so far. */
+  correctCount: number;
+  totalQuestions: number;
+}
+
+export interface CompletedQuiz {
+  id: string;
+  courseId: string;
+  courseName: string;
+  /**
+     * Null for an overall (multi-topic) quiz.
+     * @nullable
+     */
+  topicName: string | null;
+  /** @nullable */
+  title: string | null;
+  totalQuestions: number;
+  correctCount: number;
+  completedAt: string;
+}
+
+export interface QuizReviewQuestion {
+  number: number;
+  question: string;
+  options: string[];
+  correctAnswer: string;
+  explanation: string;
+  /** @nullable */
+  selectedAnswer: string | null;
+  correct: boolean;
+  /** @nullable */
+  topicName: string | null;
+}
+
+export interface QuizReview {
+  id: string;
+  courseId: string;
+  courseName: string;
+  /** @nullable */
+  topicName: string | null;
+  /** @nullable */
+  title: string | null;
+  totalQuestions: number;
+  correctCount: number;
+  completedAt: string;
+  questions: QuizReviewQuestion[];
 }
 
 export interface DocumentSummary {

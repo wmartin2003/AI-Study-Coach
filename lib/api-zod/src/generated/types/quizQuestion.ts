@@ -8,8 +8,12 @@
 
 export interface QuizQuestion {
   id: string;
+  quizId: string;
+  courseId: string;
+  courseName: string;
   number: number;
   total: number;
+  /** This question's own topic — every question in an overall quiz can differ. */
   topic: string;
   question: string;
   options: string[];

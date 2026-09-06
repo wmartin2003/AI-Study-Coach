@@ -25,7 +25,6 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "wouter";
 import {
-  getGetQuizQueryKey,
   getGetTopicStudyMaterialQueryKey,
   getGetTutorConversationQueryKey,
   getListCourseDocumentsQueryKey,
@@ -1200,7 +1199,7 @@ function PracticeTab({ courseId, topics }: { courseId: string; topics: CourseTop
           </div>
           <ArrowRight className="ml-auto h-4 w-4 shrink-0 text-muted-foreground" />
         </Link>
-        <Link href="/quiz" data-testid="link-course-quiz" className="flex items-center gap-3 rounded-2xl border border-border p-4 transition-colors hover:border-primary/30 hover:bg-secondary">
+        <Link href={`/quiz?course=${courseId}`} data-testid="link-course-quiz" className="flex items-center gap-3 rounded-2xl border border-border p-4 transition-colors hover:border-primary/30 hover:bg-secondary">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent/30 text-primary">
             <Play className="h-4 w-4" />
           </div>

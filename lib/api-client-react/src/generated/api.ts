@@ -21,6 +21,8 @@ import type {
 
 import type {
   Achievement,
+  ActiveQuiz,
+  CompletedQuiz,
   ConversationHistory,
   Course,
   CourseEvent,
@@ -42,6 +44,8 @@ import type {
   QuizAnswerInput,
   QuizFeedback,
   QuizQuestion,
+  QuizReview,
+  QuizStartInput,
   SearchInstitutionsParams,
   SyllabusExtraction,
   TopicStudyMaterial,
@@ -2099,20 +2103,20 @@ export const useSendTutorMessage = <TError = ErrorType<unknown>,
       return useMutation(getSendTutorMessageMutationOptions(options));
     }
 
-export const getGetQuizUrl = () => {
+export const getGetActiveQuizUrl = () => {
 
 
 
 
-  return `/api/quiz`
+  return `/api/quiz/active`
 }
 
 /**
- * @summary Get the current adaptive quiz
+ * @summary Get the student's in-progress quiz (if any), so it can be resumed
  */
-export const getQuiz = async ( options?: Parameters<typeof customFetch>[1]): Promise<QuizQuestion> => {
+export const getActiveQuiz = async ( options?: Parameters<typeof customFetch>[1]): Promise<ActiveQuiz> => {
 
-  return customFetch<QuizQuestion>(getGetQuizUrl(),
+  return customFetch<ActiveQuiz>(getGetActiveQuizUrl(),
   {
     ...options,
     method: 'GET'
@@ -2125,45 +2129,45 @@ export const getQuiz = async ( options?: Parameters<typeof customFetch>[1]): Pro
 
 
 
-export const getGetQuizQueryKey = () => {
+export const getGetActiveQuizQueryKey = () => {
     return [
-    `/api/quiz`
+    `/api/quiz/active`
     ] as const;
     }
 
 
-export const getGetQuizQueryOptions = <TData = Awaited<ReturnType<typeof getQuiz>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQuiz>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetActiveQuizQueryOptions = <TData = Awaited<ReturnType<typeof getActiveQuiz>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getActiveQuiz>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetQuizQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getGetActiveQuizQueryKey();
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getQuiz>>> = ({ signal }) => getQuiz({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getActiveQuiz>>> = ({ signal }) => getActiveQuiz({ signal, ...requestOptions });
 
 
 
 
 
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getQuiz>>, TError, TData> & { queryKey: QueryKey }
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getActiveQuiz>>, TError, TData> & { queryKey: QueryKey }
 }
 
-export type GetQuizQueryResult = NonNullable<Awaited<ReturnType<typeof getQuiz>>>
-export type GetQuizQueryError = ErrorType<unknown>
+export type GetActiveQuizQueryResult = NonNullable<Awaited<ReturnType<typeof getActiveQuiz>>>
+export type GetActiveQuizQueryError = ErrorType<unknown>
 
 
 /**
- * @summary Get the current adaptive quiz
+ * @summary Get the student's in-progress quiz (if any), so it can be resumed
  */
 
-export function useGetQuiz<TData = Awaited<ReturnType<typeof getQuiz>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQuiz>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export function useGetActiveQuiz<TData = Awaited<ReturnType<typeof getActiveQuiz>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getActiveQuiz>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getGetQuizQueryOptions(options)
+  const queryOptions = getGetActiveQuizQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -2175,6 +2179,77 @@ export function useGetQuiz<TData = Awaited<ReturnType<typeof getQuiz>>, TError =
 
 
 
+
+export const getStartQuizUrl = () => {
+
+
+
+
+  return `/api/quiz/start`
+}
+
+/**
+ * @summary Start a new quiz for a course — one topic, or an overall mix across topics
+ */
+export const startQuiz = async (quizStartInput: QuizStartInput, options?: Parameters<typeof customFetch>[1]): Promise<QuizQuestion> => {
+
+  return customFetch<QuizQuestion>(getStartQuizUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(quizStartInput)
+  }
+);}
+
+
+
+
+
+export const getStartQuizMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startQuiz>>, TError,{data: BodyType<QuizStartInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof startQuiz>>, TError,{data: BodyType<QuizStartInput>}, TContext> => {
+
+const mutationKey = ['startQuiz'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof startQuiz>>, {data: BodyType<QuizStartInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  startQuiz(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type StartQuizMutationResult = NonNullable<Awaited<ReturnType<typeof startQuiz>>>
+    export type StartQuizMutationBody = BodyType<QuizStartInput>
+    export type StartQuizMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Start a new quiz for a course — one topic, or an overall mix across topics
+ */
+export const useStartQuiz = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startQuiz>>, TError,{data: BodyType<QuizStartInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof startQuiz>>,
+        TError,
+        {data: BodyType<QuizStartInput>},
+        TContext
+      > => {
+      return useMutation(getStartQuizMutationOptions(options));
+    }
 
 export const getSubmitQuizAnswerUrl = () => {
 
@@ -2246,4 +2321,158 @@ export const useSubmitQuizAnswer = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getSubmitQuizAnswerMutationOptions(options));
     }
+
+export const getListCourseQuizzesUrl = (courseId: string,) => {
+
+
+
+
+  return `/api/courses/${courseId}/quizzes`
+}
+
+/**
+ * @summary List a course's completed quizzes, for review
+ */
+export const listCourseQuizzes = async (courseId: string, options?: Parameters<typeof customFetch>[1]): Promise<CompletedQuiz[]> => {
+
+  return customFetch<CompletedQuiz[]>(getListCourseQuizzesUrl(courseId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListCourseQuizzesQueryKey = (courseId: string,) => {
+    return [
+    `/api/courses/${courseId}/quizzes`
+    ] as const;
+    }
+
+
+export const getListCourseQuizzesQueryOptions = <TData = Awaited<ReturnType<typeof listCourseQuizzes>>, TError = ErrorType<unknown>>(courseId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCourseQuizzes>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListCourseQuizzesQueryKey(courseId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listCourseQuizzes>>> = ({ signal }) => listCourseQuizzes(courseId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: courseId !== null && courseId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listCourseQuizzes>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListCourseQuizzesQueryResult = NonNullable<Awaited<ReturnType<typeof listCourseQuizzes>>>
+export type ListCourseQuizzesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List a course's completed quizzes, for review
+ */
+
+export function useListCourseQuizzes<TData = Awaited<ReturnType<typeof listCourseQuizzes>>, TError = ErrorType<unknown>>(
+ courseId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCourseQuizzes>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListCourseQuizzesQueryOptions(courseId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetQuizReviewUrl = (quizId: string,) => {
+
+
+
+
+  return `/api/quiz/${quizId}/review`
+}
+
+/**
+ * @summary Get the full question-by-question review for one completed quiz
+ */
+export const getQuizReview = async (quizId: string, options?: Parameters<typeof customFetch>[1]): Promise<QuizReview> => {
+
+  return customFetch<QuizReview>(getGetQuizReviewUrl(quizId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetQuizReviewQueryKey = (quizId: string,) => {
+    return [
+    `/api/quiz/${quizId}/review`
+    ] as const;
+    }
+
+
+export const getGetQuizReviewQueryOptions = <TData = Awaited<ReturnType<typeof getQuizReview>>, TError = ErrorType<unknown>>(quizId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQuizReview>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetQuizReviewQueryKey(quizId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getQuizReview>>> = ({ signal }) => getQuizReview(quizId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: quizId !== null && quizId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getQuizReview>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetQuizReviewQueryResult = NonNullable<Awaited<ReturnType<typeof getQuizReview>>>
+export type GetQuizReviewQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get the full question-by-question review for one completed quiz
+ */
+
+export function useGetQuizReview<TData = Awaited<ReturnType<typeof getQuizReview>>, TError = ErrorType<unknown>>(
+ quizId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQuizReview>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetQuizReviewQueryOptions(quizId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 

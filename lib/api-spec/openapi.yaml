@@ -481,14 +481,32 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TutorMessage"
-  /quiz:
+  /quiz/active:
     get:
-      operationId: getQuiz
+      operationId: getActiveQuiz
       tags: [study]
-      summary: Get the current adaptive quiz
+      summary: Get the student's in-progress quiz (if any), so it can be resumed
       responses:
         "200":
-          description: Quiz question
+          description: The active quiz's next question, or an empty object when there isn't one
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActiveQuiz"
+  /quiz/start:
+    post:
+      operationId: startQuiz
+      tags: [study]
+      summary: Start a new quiz for a course — one topic, or an overall mix across topics
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QuizStartInput"
+      responses:
+        "200":
+          description: The new quiz's first question
           content:
             application/json:
               schema:
@@ -511,6 +529,42 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/QuizFeedback"
+  /courses/{courseId}/quizzes:
+    get:
+      operationId: listCourseQuizzes
+      tags: [study]
+      summary: List a course's completed quizzes, for review
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Completed quizzes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CompletedQuiz"
+  /quiz/{quizId}/review:
+    get:
+      operationId: getQuizReview
+      tags: [study]
+      summary: Get the full question-by-question review for one completed quiz
+      parameters:
+        - name: quizId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Quiz review
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuizReview"
 components:
   schemas:
     HealthStatus:
@@ -689,9 +743,28 @@ components:
         conversationId: { type: string }
     QuizQuestion:
       type: object
-      required: [id, number, total, topic, question, options, difficulty]
+      required: [id, quizId, courseId, courseName, number, total, topic, question, options, difficulty]
       properties:
         id: { type: string }
+        quizId: { type: string }
+        courseId: { type: string }
+        courseName: { type: string }
+        number: { type: number }
+        total: { type: number }
+        topic: { type: string, description: "This question's own topic — every question in an overall quiz can differ." }
+        question: { type: string }
+        options:
+          type: array
+          items: { type: string }
+        difficulty: { type: string }
+    ActiveQuiz:
+      type: object
+      description: Same shape as QuizQuestion; every property is absent when there's no active quiz to resume.
+      properties:
+        id: { type: string }
+        quizId: { type: string }
+        courseId: { type: string }
+        courseName: { type: string }
         number: { type: number }
         total: { type: number }
         topic: { type: string }
@@ -700,6 +773,18 @@ components:
           type: array
           items: { type: string }
         difficulty: { type: string }
+    QuizStartInput:
+      type: object
+      required: [courseId]
+      properties:
+        courseId: { type: string }
+        topicName:
+          type: ["string", "null"]
+          description: Omit or pass null for an overall quiz spanning every topic in the course.
+        focus:
+          type: string
+          description: "For an overall quiz only: \"balanced\" spreads questions evenly, \"weak-spots\" weights toward lower-mastery topics. Ignored for a topic-specific quiz."
+          enum: [balanced, weak-spots]
     QuizAnswerInput:
       type: object
       required: [questionId, answer]
@@ -708,12 +793,56 @@ components:
         answer: { type: string }
     QuizFeedback:
       type: object
-      required: [correct, explanation, xp, nextTopic]
+      required: [correct, explanation, xp, topicName, quizCompleted, correctCount, totalQuestions]
       properties:
         correct: { type: boolean }
         explanation: { type: string }
         xp: { type: number }
-        nextTopic: { type: string }
+        topicName: { type: string, description: "The topic this specific question covered." }
+        quizCompleted: { type: boolean }
+        correctCount: { type: number, description: "Running total of correct answers in this quiz so far." }
+        totalQuestions: { type: number }
+    CompletedQuiz:
+      type: object
+      required: [id, courseId, courseName, topicName, title, totalQuestions, correctCount, completedAt]
+      properties:
+        id: { type: string }
+        courseId: { type: string }
+        courseName: { type: string }
+        topicName: { type: ["string", "null"], description: "Null for an overall (multi-topic) quiz." }
+        title: { type: ["string", "null"] }
+        totalQuestions: { type: number }
+        correctCount: { type: number }
+        completedAt: { type: string }
+    QuizReviewQuestion:
+      type: object
+      required: [number, question, options, correctAnswer, explanation, selectedAnswer, correct, topicName]
+      properties:
+        number: { type: number }
+        question: { type: string }
+        options:
+          type: array
+          items: { type: string }
+        correctAnswer: { type: string }
+        explanation: { type: string }
+        selectedAnswer: { type: ["string", "null"] }
+        correct: { type: boolean }
+        topicName: { type: ["string", "null"] }
+    QuizReview:
+      type: object
+      required: [id, courseId, courseName, topicName, title, totalQuestions, correctCount, completedAt, questions]
+      properties:
+        id: { type: string }
+        courseId: { type: string }
+        courseName: { type: string }
+        topicName: { type: ["string", "null"] }
+        title: { type: ["string", "null"] }
+        totalQuestions: { type: number }
+        correctCount: { type: number }
+        completedAt: { type: string }
+        questions:
+          type: array
+          items: { $ref: "#/components/schemas/QuizReviewQuestion" }
     DocumentSummary:
       type: object
       required: [id, fileName, documentType, status, createdAt]

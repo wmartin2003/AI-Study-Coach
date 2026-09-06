@@ -644,13 +644,39 @@ export const SendTutorMessageResponse = zod.object({
 
 
 /**
- * @summary Get the current adaptive quiz
+ * @summary Get the student's in-progress quiz (if any), so it can be resumed
  */
-export const GetQuizResponse = zod.object({
+export const GetActiveQuizResponse = zod.object({
+  "id": zod.string().optional(),
+  "quizId": zod.string().optional(),
+  "courseId": zod.string().optional(),
+  "courseName": zod.string().optional(),
+  "number": zod.number().optional(),
+  "total": zod.number().optional(),
+  "topic": zod.string().optional(),
+  "question": zod.string().optional(),
+  "options": zod.array(zod.string()).optional(),
+  "difficulty": zod.string().optional()
+}).describe('Same shape as QuizQuestion; every property is absent when there\'s no active quiz to resume.')
+
+
+/**
+ * @summary Start a new quiz for a course — one topic, or an overall mix across topics
+ */
+export const StartQuizBody = zod.object({
+  "courseId": zod.string(),
+  "topicName": zod.string().nullish().describe('Omit or pass null for an overall quiz spanning every topic in the course.'),
+  "focus": zod.enum(['balanced', 'weak-spots']).optional().describe('For an overall quiz only: \"balanced\" spreads questions evenly, \"weak-spots\" weights toward lower-mastery topics. Ignored for a topic-specific quiz.')
+})
+
+export const StartQuizResponse = zod.object({
   "id": zod.string(),
+  "quizId": zod.string(),
+  "courseId": zod.string(),
+  "courseName": zod.string(),
   "number": zod.number(),
   "total": zod.number(),
-  "topic": zod.string(),
+  "topic": zod.string().describe('This question\'s own topic — every question in an overall quiz can differ.'),
   "question": zod.string(),
   "options": zod.array(zod.string()),
   "difficulty": zod.string()
@@ -669,7 +695,59 @@ export const SubmitQuizAnswerResponse = zod.object({
   "correct": zod.boolean(),
   "explanation": zod.string(),
   "xp": zod.number(),
-  "nextTopic": zod.string()
+  "topicName": zod.string().describe('The topic this specific question covered.'),
+  "quizCompleted": zod.boolean(),
+  "correctCount": zod.number().describe('Running total of correct answers in this quiz so far.'),
+  "totalQuestions": zod.number()
+})
+
+
+/**
+ * @summary List a course's completed quizzes, for review
+ */
+export const ListCourseQuizzesParams = zod.object({
+  "courseId": zod.coerce.string()
+})
+
+export const ListCourseQuizzesResponseItem = zod.object({
+  "id": zod.string(),
+  "courseId": zod.string(),
+  "courseName": zod.string(),
+  "topicName": zod.string().nullable().describe('Null for an overall (multi-topic) quiz.'),
+  "title": zod.string().nullable(),
+  "totalQuestions": zod.number(),
+  "correctCount": zod.number(),
+  "completedAt": zod.string()
+})
+export const ListCourseQuizzesResponse = zod.array(ListCourseQuizzesResponseItem)
+
+
+/**
+ * @summary Get the full question-by-question review for one completed quiz
+ */
+export const GetQuizReviewParams = zod.object({
+  "quizId": zod.coerce.string()
+})
+
+export const GetQuizReviewResponse = zod.object({
+  "id": zod.string(),
+  "courseId": zod.string(),
+  "courseName": zod.string(),
+  "topicName": zod.string().nullable(),
+  "title": zod.string().nullable(),
+  "totalQuestions": zod.number(),
+  "correctCount": zod.number(),
+  "completedAt": zod.string(),
+  "questions": zod.array(zod.object({
+  "number": zod.number(),
+  "question": zod.string(),
+  "options": zod.array(zod.string()),
+  "correctAnswer": zod.string(),
+  "explanation": zod.string(),
+  "selectedAnswer": zod.string().nullable(),
+  "correct": zod.boolean(),
+  "topicName": zod.string().nullable()
+}))
 })
 
 

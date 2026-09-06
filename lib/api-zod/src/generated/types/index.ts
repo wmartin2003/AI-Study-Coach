@@ -7,6 +7,8 @@
  */
 
 export * from './achievement';
+export * from './activeQuiz';
+export * from './completedQuiz';
 export * from './conversationHistory';
 export * from './conversationMessage';
 export * from './course';
@@ -32,6 +34,10 @@ export * from './profileInput';
 export * from './quizAnswerInput';
 export * from './quizFeedback';
 export * from './quizQuestion';
+export * from './quizReview';
+export * from './quizReviewQuestion';
+export * from './quizStartInput';
+export * from './quizStartInputFocus';
 export * from './searchInstitutionsParams';
 export * from './studyTask';
 export * from './syllabusExtraction';
