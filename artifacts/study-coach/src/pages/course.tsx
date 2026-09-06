@@ -10,10 +10,12 @@ import {
   Download,
   FileText,
   GraduationCap,
+  Lightbulb,
   Loader2,
   Pencil,
   Play,
   Plus,
+  RotateCcw,
   Search,
   Sparkles,
   Trash2,
@@ -24,6 +26,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "wouter";
 import {
   getGetQuizQueryKey,
+  getGetTopicStudyMaterialQueryKey,
   getGetTutorConversationQueryKey,
   getListCourseDocumentsQueryKey,
   getListCoursesQueryKey,
@@ -35,14 +38,16 @@ import {
   useDeleteDocument,
   useDeleteEvent,
   useExtractSyllabus,
+  useGetTopicStudyMaterial,
   useListCourseDocuments,
   useListCourses,
   useListEvents,
   useReactivateCourse,
+  useRegenerateTopicStudyMaterial,
   useUpdateDocument,
   useUpdateEvent,
 } from "@workspace/api-client-react";
-import type { Course, CourseEvent, DocumentSummary, SyllabusExtraction } from "@workspace/api-client-react";
+import type { Course, CourseEvent, CourseTopic, DocumentSummary, SyllabusExtraction } from "@workspace/api-client-react";
 import { AppShell, Button, EmptyState, ErrorNotice, PageHeading, ProgressBar, SkeletonBlock } from "@/components/app-shell";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -100,7 +105,6 @@ export default function CoursePage() {
   }, [courses, selectedId]);
 
   const selected = courses.find((course) => course.id === selectedId);
-  const [expanded, setExpanded] = useState(true);
   const [confirmComplete, setConfirmComplete] = useState(false);
   const topics = selected?.topics ?? [];
 
@@ -296,22 +300,7 @@ export default function CoursePage() {
                   </TabsContent>
 
                   <TabsContent value="topics" className="mt-6">
-                    <button
-                      type="button"
-                      onClick={() => setExpanded(!expanded)}
-                      data-testid="button-toggle-topics"
-                      className="mb-3 flex w-full items-center justify-between text-left"
-                    >
-                      <span className="font-mono-ui text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Learning path</span>
-                      <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${expanded ? "" : "-rotate-90"}`} />
-                    </button>
-                    {expanded && (
-                      <div className="relative space-y-1 pl-1">
-                        {topics.map((topic, index) => (
-                          <TopicRow topic={topic} index={index} total={topics.length} key={topic.name} />
-                        ))}
-                      </div>
-                    )}
+                    <TopicsTab courseId={selected.id} topics={topics} />
                   </TabsContent>
 
                   <TabsContent value="materials" className="mt-6">
@@ -438,7 +427,17 @@ function OverviewTab({ course, topics }: { course: Course; topics: Course["topic
   );
 }
 
-function TopicRow({ topic, index, total }: { topic: { name: string; masteryLevel: string; masteryScore: number }; index: number; total: number }) {
+function TopicRow({
+  topic,
+  index,
+  total,
+  onOpen,
+}: {
+  topic: { name: string; masteryLevel: string; masteryScore: number };
+  index: number;
+  total: number;
+  onOpen: () => void;
+}) {
   const complete = topic.masteryLevel === "proficient" || topic.masteryLevel === "mastered";
   const current = !complete && (topic.masteryLevel === "learning" || topic.masteryLevel === "developing");
   const statusLabel =
@@ -463,16 +462,202 @@ function TopicRow({ topic, index, total }: { topic: { name: string; masteryLevel
         )}
       </div>
       {index < total - 1 && <div className={`absolute left-[13px] top-7 h-full w-px ${complete ? "bg-primary/40" : "bg-border"}`} />}
-      <div className={`flex-1 rounded-2xl border p-3.5 transition-colors ${current ? "border-accent/40 bg-accent/10" : "border-transparent bg-secondary/50"}`}>
+      <button
+        type="button"
+        onClick={onOpen}
+        data-testid={`button-topic-${index}`}
+        className={`group flex-1 rounded-2xl border p-3.5 text-left transition-colors ${current ? "border-accent/40 bg-accent/10 hover:bg-accent/15" : "border-transparent bg-secondary/50 hover:bg-secondary"}`}
+      >
         <div className="flex items-center justify-between gap-3">
-          <div>
+          <div className="min-w-0">
             <p className={`text-[13px] font-semibold ${current ? "text-primary" : complete ? "text-primary" : "text-muted-foreground"}`}>{topic.name}</p>
             <p className="mt-1 text-[11px] text-muted-foreground">{statusLabel}</p>
           </div>
-          {current && <span className="rounded-full bg-accent px-2 py-1 font-mono-ui text-[9px] font-bold uppercase tracking-wider text-accent-foreground">Now</span>}
+          <div className="flex shrink-0 items-center gap-2">
+            {current && <span className="rounded-full bg-accent px-2 py-1 font-mono-ui text-[9px] font-bold uppercase tracking-wider text-accent-foreground">Now</span>}
+            <span className="flex items-center gap-1 font-mono-ui text-[9px] font-semibold uppercase tracking-wider text-primary opacity-0 transition-opacity group-hover:opacity-100">
+              <Sparkles className="h-3 w-3" /> Study guide
+            </span>
+          </div>
         </div>
-      </div>
+      </button>
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Topics tab — the learning path, plus an AI study guide per topic built
+// from (and kept in sync with) the student's own uploaded course materials.
+// ---------------------------------------------------------------------------
+
+function TopicsTab({ courseId, topics }: { courseId: string; topics: CourseTopic[] }) {
+  const [expanded, setExpanded] = useState(true);
+  const [activeTopic, setActiveTopic] = useState<CourseTopic | null>(null);
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setExpanded(!expanded)}
+        data-testid="button-toggle-topics"
+        className="mb-3 flex w-full items-center justify-between text-left"
+      >
+        <span className="font-mono-ui text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Learning path</span>
+        <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${expanded ? "" : "-rotate-90"}`} />
+      </button>
+      {expanded && (
+        <div className="relative space-y-1 pl-1">
+          {topics.map((topic, index) => (
+            <TopicRow topic={topic} index={index} total={topics.length} key={topic.name} onOpen={() => setActiveTopic(topic)} />
+          ))}
+        </div>
+      )}
+
+      {activeTopic && (
+        <TopicStudyGuideDialog courseId={courseId} topic={activeTopic} onClose={() => setActiveTopic(null)} />
+      )}
+    </div>
+  );
+}
+
+function SourceBars({ sources }: { sources: { fileName: string; chunkCount: number }[] }) {
+  const max = Math.max(...sources.map((s) => s.chunkCount), 1);
+  return (
+    <div className="space-y-2.5">
+      {sources.map((source) => (
+        <div key={source.fileName}>
+          <div className="mb-1 flex items-center justify-between gap-2 text-[11px]">
+            <span className="truncate font-semibold text-primary">{source.fileName}</span>
+            <span className="shrink-0 text-muted-foreground">{source.chunkCount} {source.chunkCount === 1 ? "section" : "sections"}</span>
+          </div>
+          <div className="h-1.5 overflow-hidden rounded-full bg-secondary">
+            <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${(source.chunkCount / max) * 100}%` }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function TopicStudyGuideDialog({
+  courseId,
+  topic,
+  onClose,
+}: {
+  courseId: string;
+  topic: CourseTopic;
+  onClose: () => void;
+}) {
+  const queryKey = getGetTopicStudyMaterialQueryKey(courseId, topic.name);
+  const materialQuery = useGetTopicStudyMaterial(courseId, topic.name, { query: { queryKey } });
+  const regenerate = useRegenerateTopicStudyMaterial();
+  const material = materialQuery.data;
+
+  return (
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-xl rounded-[24px]" data-testid="dialog-study-guide">
+        <DialogHeader>
+          <DialogTitle className="font-display text-2xl font-semibold text-primary">{topic.name}</DialogTitle>
+        </DialogHeader>
+
+        {materialQuery.isLoading && (
+          <div className="flex items-center gap-2 py-10 text-[13px] text-muted-foreground" data-testid="status-study-guide-loading">
+            <Loader2 className="h-4 w-4 animate-spin" /> Building your study guide...
+          </div>
+        )}
+
+        {materialQuery.isError && <ErrorNotice onRetry={() => materialQuery.refetch()} message="Couldn't build a study guide just now." />}
+
+        {material && (
+          <div className="max-h-[65vh] space-y-5 overflow-y-auto pr-1" data-testid="content-study-guide">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span
+                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono-ui text-[9px] font-bold uppercase tracking-wider ${
+                  material.groundedInMaterials ? "bg-chart-2/15 text-chart-2" : "bg-muted text-muted-foreground"
+                }`}
+              >
+                <Circle className="h-1.5 w-1.5 fill-current" />
+                {material.groundedInMaterials ? "From your materials" : "General knowledge"}
+              </span>
+              <button
+                type="button"
+                onClick={() =>
+                  regenerate.mutate(
+                    { courseId, topicName: topic.name },
+                    { onSuccess: (updated) => queryClient.setQueryData(queryKey, updated) },
+                  )
+                }
+                disabled={regenerate.isPending}
+                data-testid="button-regenerate-study-guide"
+                className="inline-flex items-center gap-1 text-[11px] font-semibold text-muted-foreground transition-colors hover:text-primary disabled:opacity-50"
+              >
+                <RotateCcw className={`h-3 w-3 ${regenerate.isPending ? "animate-spin" : ""}`} /> Regenerate
+              </button>
+            </div>
+
+            <p className="text-[13px] leading-relaxed text-primary">{material.summary}</p>
+
+            <div>
+              <p className="mb-2 font-mono-ui text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Key points</p>
+              <ul className="space-y-1.5">
+                {material.keyPoints.map((point, index) => (
+                  <li key={index} className="flex gap-2 text-[13px] leading-relaxed text-primary">
+                    <span className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-accent" />
+                    {point}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {material.keyTerms.length > 0 && (
+              <div>
+                <p className="mb-2 font-mono-ui text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Key terms</p>
+                <div className="overflow-hidden rounded-xl border border-border">
+                  <table className="w-full text-left text-[12px]">
+                    <tbody>
+                      {material.keyTerms.map((term, index) => (
+                        <tr key={index} className={index > 0 ? "border-t border-border" : ""}>
+                          <td className="w-[36%] px-3 py-2 align-top font-semibold text-primary">{term.term}</td>
+                          <td className="px-3 py-2 align-top text-muted-foreground">{term.definition}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {material.sources.length > 0 && (
+              <div>
+                <p className="mb-2 font-mono-ui text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Drawn from</p>
+                <SourceBars sources={material.sources} />
+              </div>
+            )}
+
+            <div className="rounded-2xl bg-accent/10 p-3.5">
+              <p className="mb-1 flex items-center gap-1.5 font-mono-ui text-[10px] uppercase tracking-[0.14em] text-primary">
+                <Lightbulb className="h-3.5 w-3.5" /> Next step
+              </p>
+              <p className="text-[12px] leading-relaxed text-primary">{material.nextStep}</p>
+            </div>
+
+            <p className="text-[10px] leading-relaxed text-muted-foreground">
+              Generated {formatDate(material.generatedAt)}. Upload more notes or lecture slides for this course and this
+              updates automatically next time you open it.
+            </p>
+          </div>
+        )}
+
+        <DialogFooter className="mt-2 flex-row items-center justify-between gap-2 sm:justify-between">
+          <Link href={`/tutor?course=${courseId}`} onClick={onClose} data-testid="link-study-guide-tutor" className="text-[12px] font-semibold text-primary hover:underline">
+            Ask the tutor about this →
+          </Link>
+          <button type="button" onClick={onClose} className="rounded-xl px-4 py-2.5 text-[13px] font-semibold text-muted-foreground hover:bg-muted">
+            Close
+          </button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

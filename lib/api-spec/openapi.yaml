@@ -313,6 +313,48 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ExtractionApplyResult"
+  /courses/{courseId}/topics/{topicName}/study-material:
+    get:
+      operationId: getTopicStudyMaterial
+      tags: [study]
+      summary: Get the AI study guide for a topic, generating or refreshing it if stale
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: topicName
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Study guide
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TopicStudyMaterial"
+  /courses/{courseId}/topics/{topicName}/study-material/regenerate:
+    post:
+      operationId: regenerateTopicStudyMaterial
+      tags: [study]
+      summary: Force-regenerate a topic's study guide even if the cached one is still fresh
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: topicName
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Study guide
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TopicStudyMaterial"
   /institutions/search:
     get:
       operationId: searchInstitutions
@@ -748,6 +790,38 @@ components:
         title: { type: string, minLength: 1 }
         eventDate: { type: string, minLength: 1 }
         description: { type: string }
+    TopicKeyTerm:
+      type: object
+      required: [term, definition]
+      properties:
+        term: { type: string }
+        definition: { type: string }
+    TopicMaterialSource:
+      type: object
+      required: [fileName, chunkCount]
+      properties:
+        fileName: { type: string }
+        chunkCount: { type: number }
+    TopicStudyMaterial:
+      type: object
+      required: [topicName, summary, keyPoints, keyTerms, nextStep, groundedInMaterials, sources, generatedAt]
+      properties:
+        topicName: { type: string }
+        summary: { type: string }
+        keyPoints:
+          type: array
+          items: { type: string }
+        keyTerms:
+          type: array
+          items: { $ref: "#/components/schemas/TopicKeyTerm" }
+        nextStep: { type: string }
+        groundedInMaterials:
+          type: boolean
+          description: True when at least one of the student's own uploaded-document chunks contributed to this guide.
+        sources:
+          type: array
+          items: { $ref: "#/components/schemas/TopicMaterialSource" }
+        generatedAt: { type: string }
     Achievement:
       type: object
       required: [id, key, title, description, courseName, courseCode, earnedAt]

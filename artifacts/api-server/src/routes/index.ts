@@ -6,6 +6,7 @@ import eventsRouter from "./events";
 import achievementsRouter from "./achievements";
 import institutionsRouter from "./institutions";
 import accountRouter from "./account";
+import studyMaterialsRouter from "./study-materials";
 
 const router: IRouter = Router();
 
@@ -16,5 +17,6 @@ router.use(eventsRouter);
 router.use(achievementsRouter);
 router.use(institutionsRouter);
 router.use(accountRouter);
+router.use(studyMaterialsRouter);
 
 export default router;

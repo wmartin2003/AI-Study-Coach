@@ -294,6 +294,28 @@ export interface CourseEventInput {
   description?: string;
 }
 
+export interface TopicKeyTerm {
+  term: string;
+  definition: string;
+}
+
+export interface TopicMaterialSource {
+  fileName: string;
+  chunkCount: number;
+}
+
+export interface TopicStudyMaterial {
+  topicName: string;
+  summary: string;
+  keyPoints: string[];
+  keyTerms: TopicKeyTerm[];
+  nextStep: string;
+  /** True when at least one of the student's own uploaded-document chunks contributed to this guide. */
+  groundedInMaterials: boolean;
+  sources: TopicMaterialSource[];
+  generatedAt: string;
+}
+
 export interface Achievement {
   id: string;
   key: string;

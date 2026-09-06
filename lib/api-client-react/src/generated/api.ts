@@ -44,6 +44,7 @@ import type {
   QuizQuestion,
   SearchInstitutionsParams,
   SyllabusExtraction,
+  TopicStudyMaterial,
   TutorMessage,
   TutorMessageInput
 } from './api.schemas';
@@ -1411,6 +1412,161 @@ export const useConfirmExtraction = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getConfirmExtractionMutationOptions(options));
+    }
+
+export const getGetTopicStudyMaterialUrl = (courseId: string,
+    topicName: string,) => {
+
+
+
+
+  return `/api/courses/${courseId}/topics/${topicName}/study-material`
+}
+
+/**
+ * @summary Get the AI study guide for a topic, generating or refreshing it if stale
+ */
+export const getTopicStudyMaterial = async (courseId: string,
+    topicName: string, options?: Parameters<typeof customFetch>[1]): Promise<TopicStudyMaterial> => {
+
+  return customFetch<TopicStudyMaterial>(getGetTopicStudyMaterialUrl(courseId,topicName),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetTopicStudyMaterialQueryKey = (courseId: string,
+    topicName: string,) => {
+    return [
+    `/api/courses/${courseId}/topics/${topicName}/study-material`
+    ] as const;
+    }
+
+
+export const getGetTopicStudyMaterialQueryOptions = <TData = Awaited<ReturnType<typeof getTopicStudyMaterial>>, TError = ErrorType<unknown>>(courseId: string,
+    topicName: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getTopicStudyMaterial>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetTopicStudyMaterialQueryKey(courseId,topicName);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getTopicStudyMaterial>>> = ({ signal }) => getTopicStudyMaterial(courseId,topicName, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: courseId !== null && courseId !== undefined && topicName !== null && topicName !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getTopicStudyMaterial>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetTopicStudyMaterialQueryResult = NonNullable<Awaited<ReturnType<typeof getTopicStudyMaterial>>>
+export type GetTopicStudyMaterialQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get the AI study guide for a topic, generating or refreshing it if stale
+ */
+
+export function useGetTopicStudyMaterial<TData = Awaited<ReturnType<typeof getTopicStudyMaterial>>, TError = ErrorType<unknown>>(
+ courseId: string,
+    topicName: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getTopicStudyMaterial>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetTopicStudyMaterialQueryOptions(courseId,topicName,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getRegenerateTopicStudyMaterialUrl = (courseId: string,
+    topicName: string,) => {
+
+
+
+
+  return `/api/courses/${courseId}/topics/${topicName}/study-material/regenerate`
+}
+
+/**
+ * @summary Force-regenerate a topic's study guide even if the cached one is still fresh
+ */
+export const regenerateTopicStudyMaterial = async (courseId: string,
+    topicName: string, options?: Parameters<typeof customFetch>[1]): Promise<TopicStudyMaterial> => {
+
+  return customFetch<TopicStudyMaterial>(getRegenerateTopicStudyMaterialUrl(courseId,topicName),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getRegenerateTopicStudyMaterialMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof regenerateTopicStudyMaterial>>, TError,{courseId: string;topicName: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof regenerateTopicStudyMaterial>>, TError,{courseId: string;topicName: string}, TContext> => {
+
+const mutationKey = ['regenerateTopicStudyMaterial'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof regenerateTopicStudyMaterial>>, {courseId: string;topicName: string}> = (props) => {
+          const {courseId,topicName} = props ?? {};
+
+          return  regenerateTopicStudyMaterial(courseId,topicName,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RegenerateTopicStudyMaterialMutationResult = NonNullable<Awaited<ReturnType<typeof regenerateTopicStudyMaterial>>>
+
+    export type RegenerateTopicStudyMaterialMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Force-regenerate a topic's study guide even if the cached one is still fresh
+ */
+export const useRegenerateTopicStudyMaterial = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof regenerateTopicStudyMaterial>>, TError,{courseId: string;topicName: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof regenerateTopicStudyMaterial>>,
+        TError,
+        {courseId: string;topicName: string},
+        TContext
+      > => {
+      return useMutation(getRegenerateTopicStudyMaterialMutationOptions(options));
     }
 
 export const getSearchInstitutionsUrl = (params: SearchInstitutionsParams,) => {

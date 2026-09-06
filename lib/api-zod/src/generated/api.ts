@@ -450,6 +450,58 @@ export const ConfirmExtractionResponse = zod.object({
 
 
 /**
+ * @summary Get the AI study guide for a topic, generating or refreshing it if stale
+ */
+export const GetTopicStudyMaterialParams = zod.object({
+  "courseId": zod.coerce.string(),
+  "topicName": zod.coerce.string()
+})
+
+export const GetTopicStudyMaterialResponse = zod.object({
+  "topicName": zod.string(),
+  "summary": zod.string(),
+  "keyPoints": zod.array(zod.string()),
+  "keyTerms": zod.array(zod.object({
+  "term": zod.string(),
+  "definition": zod.string()
+})),
+  "nextStep": zod.string(),
+  "groundedInMaterials": zod.boolean().describe('True when at least one of the student\'s own uploaded-document chunks contributed to this guide.'),
+  "sources": zod.array(zod.object({
+  "fileName": zod.string(),
+  "chunkCount": zod.number()
+})),
+  "generatedAt": zod.string()
+})
+
+
+/**
+ * @summary Force-regenerate a topic's study guide even if the cached one is still fresh
+ */
+export const RegenerateTopicStudyMaterialParams = zod.object({
+  "courseId": zod.coerce.string(),
+  "topicName": zod.coerce.string()
+})
+
+export const RegenerateTopicStudyMaterialResponse = zod.object({
+  "topicName": zod.string(),
+  "summary": zod.string(),
+  "keyPoints": zod.array(zod.string()),
+  "keyTerms": zod.array(zod.object({
+  "term": zod.string(),
+  "definition": zod.string()
+})),
+  "nextStep": zod.string(),
+  "groundedInMaterials": zod.boolean().describe('True when at least one of the student\'s own uploaded-document chunks contributed to this guide.'),
+  "sources": zod.array(zod.object({
+  "fileName": zod.string(),
+  "chunkCount": zod.number()
+})),
+  "generatedAt": zod.string()
+})
+
+
+/**
  * @summary Search a public university/school dataset by name
  */
 export const SearchInstitutionsQueryParams = zod.object({
