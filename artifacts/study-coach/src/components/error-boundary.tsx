@@ -52,13 +52,18 @@ function DefaultFallback({ error, resetError }: ErrorFallbackProps) {
             {error.message || String(error)}
           </pre>
         ) : null}
-        <button
-          type="button"
-          onClick={resetError}
-          className="mt-4 rounded bg-primary px-4 py-2 text-sm text-primary-foreground hover:opacity-90"
-        >
-          Try again
-        </button>
+        <div className="mt-4 flex items-center justify-center gap-3">
+          <button
+            type="button"
+            onClick={resetError}
+            className="rounded bg-primary px-4 py-2 text-sm text-primary-foreground hover:opacity-90"
+          >
+            Try again
+          </button>
+          <a href="/" className="text-sm font-semibold text-primary hover:underline">
+            Back to your desk
+          </a>
+        </div>
       </div>
     </div>
   );
