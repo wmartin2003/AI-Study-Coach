@@ -32,6 +32,7 @@ import { buildPlan } from "../lib/plan";
 import { applyQuizResult, touchStreak } from "../lib/mastery";
 import { retrieveRelevantChunks } from "../lib/documents";
 import { awardCompletionBadge } from "../lib/badges";
+import { assertBudgetAvailable, QuotaExceededError, ServicePausedError } from "../lib/usage";
 import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
@@ -332,6 +333,10 @@ router.post("/courses", async (req, res) => {
   if (!name) return res.status(400).json({ error: "Course name can't be blank." });
   const level = input.level || "Undergraduate";
 
+  // Checked up front, before the course row is created, so a student over
+  // quota gets a clean 429 rather than a half-created course with no topics.
+  await assertBudgetAvailable(userId);
+
   const { data: course, error } = await supabase
     .from("courses")
     .insert({
@@ -351,8 +356,9 @@ router.post("/courses", async (req, res) => {
 
   let topicNames: string[] = [];
   try {
-    topicNames = await generateTopicOutline(name, level);
+    topicNames = await generateTopicOutline(userId, name, level);
   } catch (err) {
+    if (err instanceof QuotaExceededError || err instanceof ServicePausedError) throw err;
     logger.error({ err }, "Failed to generate topic outline; course created without topics");
   }
 
@@ -577,7 +583,7 @@ router.post("/tutor/messages", aiRateLimit, async (req, res) => {
 
     const context = await assembleContext(supabase, userId, input.courseId, input.topicName);
     const retrieval = await retrieveRelevantChunks(supabase, userId, context.courseId, input.message);
-    const reply = await generateReply(context, history, input.message, retrieval);
+    const reply = await generateReply(userId, context, history, input.message, retrieval);
 
     await supabase.from("messages").insert([
       { user_id: userId, conversation_id: conversationId, role: "user", content: input.message },
@@ -595,6 +601,7 @@ router.post("/tutor/messages", aiRateLimit, async (req, res) => {
       }),
     );
   } catch (err) {
+    if (err instanceof QuotaExceededError || err instanceof ServicePausedError) throw err;
     logger.error({ err }, "Tutor message failed");
     res.status(502).json({ error: "The tutor couldn't respond just now." });
   }
@@ -691,6 +698,11 @@ router.post("/quiz/start", aiRateLimit, async (req, res) => {
   if (courseError) return res.status(500).json({ error: courseError.message });
   if (!course) return res.status(404).json({ error: "Course not found" });
 
+  // Checked before the (destructive) supersede step below — a student over
+  // quota should still be able to resume whatever quiz they already had in
+  // progress, not lose it for a new quiz that's about to fail anyway.
+  await assertBudgetAvailable(userId);
+
   // Starting a new quiz supersedes whatever else was in progress, so the
   // student is never juggling more than one "current" quiz at a time. The
   // superseded one still shows up honestly in review, scored on however
@@ -722,7 +734,7 @@ router.post("/quiz/start", aiRateLimit, async (req, res) => {
         .maybeSingle();
       if (!topic) return res.status(404).json({ error: "Topic not found" });
 
-      const questions = await generateQuizQuestions({ courseName: course.name, topicName: topic.name, count: QUIZ_LENGTH, level: course.level });
+      const questions = await generateQuizQuestions({ userId, courseName: course.name, topicName: topic.name, count: QUIZ_LENGTH, level: course.level });
       planned = questions.map((q) => ({ topicId: topic.id, topicName: topic.name, ...q }));
       primaryTopicId = topic.id;
     } else {
@@ -742,7 +754,7 @@ router.post("/quiz/start", aiRateLimit, async (req, res) => {
         QUIZ_LENGTH,
         focus,
       );
-      const generated = await generateOverallQuizQuestions({ courseName: course.name, level: course.level, allocations });
+      const generated = await generateOverallQuizQuestions({ userId, courseName: course.name, level: course.level, allocations });
 
       const topicIdByName = new Map(topics.map((t) => [t.name.trim().toLowerCase(), t.id] as const));
       planned = generated.map((q) => ({
@@ -785,6 +797,7 @@ router.post("/quiz/start", aiRateLimit, async (req, res) => {
     const first = inserted.find((q) => q.question_number === 1)!;
     return res.json(StartQuizResponse.parse(toQuizQuestionResponse(quiz, course.name, planned[0]!.topicName, first)));
   } catch (err) {
+    if (err instanceof QuotaExceededError || err instanceof ServicePausedError) throw err;
     logger.error({ err, courseId: input.courseId, topicName: input.topicName }, "Quiz generation failed");
     return res.status(502).json({ error: "Couldn't build a quiz just now." });
   }

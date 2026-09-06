@@ -3,6 +3,7 @@ import { CompleteTopicStudyMaterialResponse, GetTopicStudyMaterialResponse } fro
 import { requireAuth } from "../middlewares/auth";
 import { aiRateLimit } from "../middlewares/rate-limit";
 import { getOrGenerateTopicStudyMaterial, markTopicStudyMaterialComplete } from "../lib/study-materials";
+import { QuotaExceededError, ServicePausedError } from "../lib/usage";
 import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
@@ -18,6 +19,7 @@ async function respondWithStudyMaterial(req: Request, res: Response, force: bool
     if (!material) return res.status(404).json({ error: "Topic not found" });
     return res.json(GetTopicStudyMaterialResponse.parse(material));
   } catch (err) {
+    if (err instanceof QuotaExceededError || err instanceof ServicePausedError) throw err;
     logger.error({ err, courseId: req.params.courseId, topicName }, "Study guide generation failed");
     return res.status(502).json({ error: "Couldn't build a study guide just now." });
   }

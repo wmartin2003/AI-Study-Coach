@@ -36,6 +36,7 @@ type GeneratedGuide = {
 };
 
 async function generateGuide(
+  userId: string,
   courseName: string,
   topicName: string,
   level: string,
@@ -47,6 +48,8 @@ async function generateGuide(
     : "";
 
   return generateStructured<GeneratedGuide>({
+    userId,
+    feature: "study_guide",
     system: [
       "You write concise, well-organized study guides for a study-coach app.",
       hasMaterial
@@ -160,7 +163,7 @@ export async function getOrGenerateTopicStudyMaterial(
   }
 
   const retrieval = await retrieveRelevantChunks(supabase, userId, courseId, `${topic.name} ${course.name}`, 8);
-  const generated = await generateGuide(course.name, topic.name, course.level, retrieval.chunks);
+  const generated = await generateGuide(userId, course.name, topic.name, course.level, retrieval.chunks);
 
   const sourceCounts = new Map<string, number>();
   for (const chunk of retrieval.chunks) sourceCounts.set(chunk.fileName, (sourceCounts.get(chunk.fileName) ?? 0) + 1);

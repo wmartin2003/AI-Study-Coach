@@ -9,6 +9,18 @@ export interface HealthStatus {
   status: string;
 }
 
+export interface SignupInput {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  inviteCode: string;
+}
+
+export interface AccountCreated {
+  ok: boolean;
+}
+
 export interface Profile {
   id: string;
   /** @nullable */

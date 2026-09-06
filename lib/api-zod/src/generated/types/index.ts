@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './accountCreated';
 export * from './achievement';
 export * from './activeQuiz';
 export * from './completedQuiz';
@@ -40,6 +41,7 @@ export * from './quizReviewQuestion';
 export * from './quizStartInput';
 export * from './quizStartInputFocus';
 export * from './searchInstitutionsParams';
+export * from './signupInput';
 export * from './studyTask';
 export * from './syllabusExtraction';
 export * from './topicKeyTerm';

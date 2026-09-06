@@ -7,6 +7,8 @@ import type { CourseInput } from "@workspace/api-client-react";
 import { AppShell, Button, ErrorNotice, PageHeading } from "@/components/app-shell";
 import { Form } from "@/components/ui/form";
 import { supabase } from "@/lib/supabase";
+import { getApiErrorMessage, isBudgetError } from "@/lib/format";
+import { toast } from "@/hooks/use-toast";
 
 type UploadState = "idle" | "uploading" | "ready" | "failed";
 
@@ -56,6 +58,13 @@ export default function NewCoursePage() {
           } catch {
             setUploadState("failed");
           }
+        },
+        onError: (err) => {
+          toast({
+            title: isBudgetError(err) ? "AI allowance reached" : "Couldn't create this course",
+            description: getApiErrorMessage(err, "We couldn't save this course. Your details are still here."),
+            variant: "destructive",
+          });
         },
       },
     ),
@@ -129,7 +138,9 @@ export default function NewCoursePage() {
 
               {createCourse.isError && (
                 <div className="mt-5">
-                  <ErrorNotice message="We couldn't save this course. Your details are still here." />
+                  <ErrorNotice
+                    message={getApiErrorMessage(createCourse.error, "We couldn't save this course. Your details are still here.")}
+                  />
                 </div>
               )}
               <div className="mt-8 flex flex-col-reverse justify-between gap-3 border-t border-border pt-5 sm:flex-row sm:items-center">

@@ -26,6 +26,24 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /signup:
+    post:
+      operationId: signup
+      tags: [study]
+      summary: Create a new account with a valid invite code (public — no auth required)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignupInput"
+      responses:
+        "201":
+          description: Account created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountCreated"
   /profile:
     get:
       operationId: getProfile
@@ -595,6 +613,20 @@ components:
           type: string
       required:
         - status
+    SignupInput:
+      type: object
+      required: [email, password, firstName, lastName, inviteCode]
+      properties:
+        email: { type: string }
+        password: { type: string }
+        firstName: { type: string }
+        lastName: { type: string }
+        inviteCode: { type: string }
+    AccountCreated:
+      type: object
+      required: [ok]
+      properties:
+        ok: { type: boolean }
     Profile:
       type: object
       required: [id, fullName, onboardingCompleted]

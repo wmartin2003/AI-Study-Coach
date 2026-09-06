@@ -26,7 +26,29 @@ app.use(
     },
   }),
 );
-app.use(cors());
+// In production, only origins explicitly listed in ALLOWED_ORIGINS (a
+// comma-separated env var) may call this API with credentials — an open
+// `cors()` would let any site's JavaScript ride a visitor's session.
+// Development keeps a permissive localhost fallback so the Vite dev server
+// (whatever port it lands on) always works without extra setup.
+const allowedOrigins = (process.env["ALLOWED_ORIGINS"] ?? "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+const isDevelopment = process.env["NODE_ENV"] !== "production";
+
+app.use(
+  cors({
+    origin(origin, callback) {
+      // No Origin header (server-to-server, curl, health checks) — allow.
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      if (isDevelopment && /^https?:\/\/localhost(:\d+)?$/.test(origin)) return callback(null, true);
+      callback(new Error("Not allowed by CORS"));
+    },
+    credentials: true,
+  }),
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

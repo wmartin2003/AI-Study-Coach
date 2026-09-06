@@ -18,6 +18,22 @@ export const HealthCheckResponse = zod.object({
 
 
 /**
+ * @summary Create a new account with a valid invite code (public — no auth required)
+ */
+export const SignupBody = zod.object({
+  "email": zod.string(),
+  "password": zod.string(),
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "inviteCode": zod.string()
+})
+
+export const SignupResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+/**
  * @summary Get the signed-in student's profile
  */
 export const GetProfileResponse = zod.object({

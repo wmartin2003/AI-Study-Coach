@@ -30,7 +30,8 @@ import type { ActiveQuiz, Course, CourseTopic, CompletedQuiz, QuizFeedback, Quiz
 import { AppShell, Button, EmptyState, ErrorNotice, PageHeading, ProgressBar, SkeletonBlock, StatPill } from "@/components/app-shell";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { queryClient } from "@/lib/query-client";
-import { formatDate } from "@/lib/format";
+import { formatDate, getApiErrorMessage, isBudgetError } from "@/lib/format";
+import { toast } from "@/hooks/use-toast";
 
 type PageMode = "hub" | "active" | "completed";
 
@@ -81,6 +82,13 @@ export default function QuizPage() {
           setSessionCorrect(0);
           setSessionXp(0);
           queryClient.invalidateQueries({ queryKey: getGetActiveQuizQueryKey() });
+        },
+        onError: (err) => {
+          toast({
+            title: isBudgetError(err) ? "AI allowance reached" : "Couldn't build a quiz",
+            description: getApiErrorMessage(err, "Couldn't build a quiz just now. Please try again."),
+            variant: "destructive",
+          });
         },
       },
     );

@@ -24,8 +24,10 @@ export type SyllabusExtraction = {
  * weekly topics — the review screen needs to distinguish those, not present
  * a guess as a fact.
  */
-export async function extractSyllabusInfo(text: string): Promise<SyllabusExtraction> {
+export async function extractSyllabusInfo(userId: string, text: string): Promise<SyllabusExtraction> {
   return generateStructured<SyllabusExtraction>({
+    userId,
+    feature: "syllabus",
     system:
       "You extract structured information from course syllabi for a study-coach app. Only report information that is actually present in the text — never invent a course code, instructor name, or date that isn't there. For each topic and event, set confidence to \"high\" only when it's stated explicitly and unambiguously (e.g. an exact date, an explicit topic list); use \"medium\" when it's a reasonable reading of the text; use \"low\" when you're inferring loosely. If a date isn't given a specific calendar date (e.g. only \"Week 6\"), set eventDate to null rather than guessing a date. If the document isn't a syllabus at all, return empty topics/events arrays and confidence \"low\".",
     prompt: `Syllabus text:\n\n${text.slice(0, 12000)}`,

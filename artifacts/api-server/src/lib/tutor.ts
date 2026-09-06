@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type Anthropic from "@anthropic-ai/sdk";
 import { anthropic, TUTOR_MODEL } from "./anthropic";
 import type { RetrievedChunk } from "./documents";
+import { assertBudgetAvailable, recordUsage } from "./usage";
 
 const SYSTEM_PROMPT = `ROLE: You are an adaptive educational tutor inside "AI Study Coach".
 
@@ -151,11 +152,14 @@ function contextBlock(context: TutorContext, retrieval?: { hasDocuments: boolean
 }
 
 export async function generateReply(
+  userId: string,
   context: TutorContext,
   history: TutorTurn[],
   message: string,
   retrieval?: { hasDocuments: boolean; chunks: RetrievedChunk[] },
 ): Promise<{ message: string; prompt: string }> {
+  await assertBudgetAvailable(userId);
+
   const block = contextBlock(context, retrieval);
 
   const response = await anthropic.messages.create({
@@ -169,6 +173,13 @@ export async function generateReply(
       ...history.map((turn) => ({ role: turn.role, content: turn.content }) as const),
       { role: "user" as const, content: message },
     ],
+  });
+
+  await recordUsage({
+    userId,
+    feature: "tutor",
+    model: TUTOR_MODEL,
+    usage: { inputTokens: response.usage.input_tokens, outputTokens: response.usage.output_tokens },
   });
 
   const text = response.content

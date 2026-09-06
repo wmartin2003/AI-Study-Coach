@@ -54,8 +54,10 @@ export async function pickPriorityCourse(
   return { id: chosen.id, name: chosen.name, level: chosen.level, nearestEventDate: null };
 }
 
-export async function generateTopicOutline(courseName: string, level: string): Promise<string[]> {
+export async function generateTopicOutline(userId: string, courseName: string, level: string): Promise<string[]> {
   const result = await generateStructured<{ topics: string[] }>({
+    userId,
+    feature: "topics",
     system:
       "You design study curricula. Given a course name and level, break it into 4-6 major topic areas a student would progress through, ordered from foundational to advanced. Keep each topic name short (2-5 words).",
     prompt: `Course: ${courseName}\nLevel: ${level}\n\nList the topic areas for this course.`,

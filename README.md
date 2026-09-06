@@ -53,6 +53,8 @@ cp artifacts/study-coach/.env.example artifacts/study-coach/.env
 | `SUPABASE_DB_URL` | Supabase → Settings → Database (used for running migrations, not by the app at runtime) |
 | `VITE_SUPABASE_URL` | Same as `SUPABASE_URL` |
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | Same as `SUPABASE_PUBLISHABLE_KEY` |
+| `ALLOWED_ORIGINS` | Comma-separated list of origins allowed to call the API in production (e.g. `https://app.example.com`). Falls back to `localhost` in development. |
+| `USER_MONTHLY_BUDGET_USD` | Optional. Default per-user monthly AI spend cap in USD (default `2` if unset); a student's `profiles.monthly_budget_usd`, when set, overrides this for that student. |
 
 `artifacts/study-coach/.env` only needs the two `VITE_*` values (Vite only exposes env vars prefixed `VITE_` to the frontend bundle — this is what keeps the secret key out of the browser).
 

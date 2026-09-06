@@ -54,7 +54,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/lib/supabase";
 import { queryClient } from "@/lib/query-client";
-import { formatDate } from "@/lib/format";
+import { formatDate, getApiErrorMessage, isBudgetError } from "@/lib/format";
 import { toast } from "@/hooks/use-toast";
 
 type StatusFilter = "active" | "completed" | "archived";
@@ -600,7 +600,12 @@ function TopicStudyGuideDialog({
           </div>
         )}
 
-        {materialQuery.isError && <ErrorNotice onRetry={() => materialQuery.refetch()} message="Couldn't build a study guide just now." />}
+        {materialQuery.isError && (
+          <ErrorNotice
+            onRetry={() => materialQuery.refetch()}
+            message={getApiErrorMessage(materialQuery.error, "Couldn't build a study guide just now.")}
+          />
+        )}
 
         {material && (
           <div className="max-h-[65vh] space-y-5 overflow-y-auto pr-1" data-testid="content-study-guide">
@@ -618,7 +623,15 @@ function TopicStudyGuideDialog({
                 onClick={() =>
                   regenerate.mutate(
                     { courseId, topicName: topic.name },
-                    { onSuccess: (updated) => queryClient.setQueryData(queryKey, updated) },
+                    {
+                      onSuccess: (updated) => queryClient.setQueryData(queryKey, updated),
+                      onError: (err) =>
+                        toast({
+                          title: isBudgetError(err) ? "AI allowance reached" : "Couldn't regenerate",
+                          description: getApiErrorMessage(err, "Couldn't build a study guide just now."),
+                          variant: "destructive",
+                        }),
+                    },
                   )
                 }
                 disabled={regenerate.isPending}

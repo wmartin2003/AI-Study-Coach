@@ -24,12 +24,15 @@ function shuffle<T>(items: T[]): T[] {
 }
 
 export async function generateQuizQuestions(options: {
+  userId: string;
   courseName: string;
   topicName: string;
   count: number;
   level: string;
 }): Promise<GeneratedQuestion[]> {
   const result = await generateStructured<{ questions: GeneratedQuestion[] }>({
+    userId: options.userId,
+    feature: "quiz",
     system:
       "You are an assessment writer for an adaptive study-coach app. Write clear, unambiguous multiple-choice questions that test real understanding, not trivia. Each question needs exactly 4 options with exactly one correct answer. Vary difficulty across the set: start with warm-up questions and progress toward stretch questions that require applying the concept, not just recalling it.",
     prompt: `Course: ${options.courseName}\nTopic: ${options.topicName}\nStudent level: ${options.level}\n\nWrite ${options.count} multiple-choice questions on this topic.`,
@@ -108,6 +111,7 @@ export type OverallQuestion = GeneratedQuestion & { topicName: string };
  * model invented.
  */
 export async function generateOverallQuizQuestions(options: {
+  userId: string;
   courseName: string;
   level: string;
   allocations: TopicAllocation[];
@@ -116,6 +120,8 @@ export async function generateOverallQuizQuestions(options: {
   const totalCount = options.allocations.reduce((sum, a) => sum + a.questionCount, 0);
 
   const result = await generateStructured<{ questions: OverallQuestion[] }>({
+    userId: options.userId,
+    feature: "quiz",
     system:
       "You are an assessment writer for an adaptive study-coach app, building a course-wide review quiz that spans multiple topics. Follow the requested per-topic question count exactly. Each question needs exactly 4 options with exactly one correct answer, and must be tagged with the exact topic name it covers. Vary difficulty across the set overall.",
     prompt: `Course: ${options.courseName}\nStudent level: ${options.level}\n\nWrite a ${totalCount}-question review quiz with this exact topic distribution: ${plan}.`,

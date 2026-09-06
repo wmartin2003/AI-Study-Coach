@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { BookOpen, Mail } from "lucide-react";
+import { useSignup } from "@workspace/api-client-react";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/app-shell";
+import { getApiErrorMessage } from "@/lib/format";
 
 type Mode = "sign-in" | "sign-up";
 
@@ -13,9 +15,11 @@ export default function LoginPage() {
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [inviteCode, setInviteCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const signup = useSignup();
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -29,21 +33,28 @@ export default function LoginPage() {
         if (signInError) throw signInError;
         setLocation("/");
       } else {
-        const { data, error: signUpError } = await supabase.auth.signUp({
-          email,
-          password,
-          options: { data: { first_name: firstName || undefined, last_name: lastName || undefined } },
-        });
-        if (signUpError) throw signUpError;
-        if (data.session) {
-          setLocation("/onboarding");
-        } else {
-          setNotice("Check your email to confirm your account, then sign in.");
-          setMode("sign-in");
+        // Accounts are created only by the server (POST /api/signup), never
+        // by calling supabase.auth.signUp from the browser — the anon key is
+        // public, so an invite-code check here would be bypassable. The
+        // server verifies the code and creates the user with the service
+        // role; we sign in with the same credentials right after.
+        await signup.mutateAsync({ data: { email, password, firstName, lastName, inviteCode } });
+        const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+        if (signInError) {
+          // Email confirmation may be required at the project level (a
+          // manual Supabase dashboard setting, not this app's call) — that's
+          // not a failure, just a step before the account is usable.
+          if (signInError.message.toLowerCase().includes("email not confirmed")) {
+            setNotice("Account created — check your email to confirm it, then sign in.");
+            setMode("sign-in");
+            return;
+          }
+          throw signInError;
         }
+        setLocation("/onboarding");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong. Try again.");
+      setError(getApiErrorMessage(err, err instanceof Error ? err.message : "Something went wrong. Try again."));
     } finally {
       setPending(false);
     }
@@ -142,6 +153,23 @@ export default function LoginPage() {
                 className="form-input mt-2"
               />
             </div>
+            {mode === "sign-up" && (
+              <div>
+                <label className="block text-[13px] font-semibold text-primary" htmlFor="inviteCode">
+                  Invite code
+                </label>
+                <input
+                  id="inviteCode"
+                  required
+                  value={inviteCode}
+                  onChange={(event) => setInviteCode(event.target.value)}
+                  placeholder="e.g. quiet-otter-4821"
+                  data-testid="input-invite-code"
+                  className="form-input mt-2"
+                />
+                <p className="mt-1.5 text-[12px] text-muted-foreground">We're in closed beta — you'll need a code from someone already in.</p>
+              </div>
+            )}
 
             {error && (
               <p className="rounded-xl bg-destructive/5 px-3 py-2 text-[12px] text-destructive" data-testid="text-auth-error">

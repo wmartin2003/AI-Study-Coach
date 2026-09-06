@@ -11,6 +11,8 @@ import {
 import type { TutorMessage } from "@workspace/api-client-react";
 import { AppShell, ErrorNotice, PageHeading } from "@/components/app-shell";
 import { TutorMarkdown } from "@/components/tutor-markdown";
+import { toast } from "@/hooks/use-toast";
+import { getApiErrorMessage, isBudgetError } from "@/lib/format";
 
 type ChatMessage = { role: string; message: string; prompt?: string };
 const GENERAL = "__general__";
@@ -60,11 +62,20 @@ export default function TutorPage() {
           setMessages((current) => [...current, reply]);
           setConversationId(reply.conversationId);
         },
-        onError: () =>
+        onError: (err) => {
+          if (isBudgetError(err)) {
+            // Don't leave an unanswered message sitting in the transcript —
+            // give the question back to the input so nothing typed is lost.
+            setMessages((current) => current.slice(0, -1));
+            setDraft(message);
+            toast({ title: "AI allowance reached", description: getApiErrorMessage(err, "Try again later."), variant: "destructive" });
+            return;
+          }
           setMessages((current) => [
             ...current,
             { role: "tutor", message: "I lost my train of thought for a moment. Try asking that again, or break it into a smaller question." },
-          ]),
+          ]);
+        },
       },
     );
   };
