@@ -1,10 +1,12 @@
-import { ArrowRight, BookOpen, Calendar, Check, Clock3, Lightbulb, Plus, Target, Trophy, Zap } from "lucide-react";
-import { useMemo } from "react";
+import { ArrowRight, BookOpen, Calendar, Check, ChevronDown, Clock3, Lightbulb, Plus, RotateCcw, Target, Trophy, Zap } from "lucide-react";
+import { useMemo, useState } from "react";
 import { Link } from "wouter";
 import { getGetDashboardQueryKey, useGetDashboard } from "@workspace/api-client-react";
 import type { Dashboard } from "@workspace/api-client-react";
 import { AppShell, Button, EmptyState, ErrorNotice, PageHeading, ProgressBar, SkeletonBlock, StatPill } from "@/components/app-shell";
 import { formatDate } from "@/lib/format";
+
+const COLLAPSED_TASK_COUNT = 3;
 
 export default function DashboardPage() {
   const dashboardQuery = useGetDashboard({ query: { queryKey: getGetDashboardQueryKey() } });
@@ -12,6 +14,9 @@ export default function DashboardPage() {
   const tasks = useMemo(() => data?.tasks ?? [], [data]);
   const completed = tasks.filter((task) => task.completed).length;
   const dayLabel = useMemo(() => new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }), []);
+  const [planExpanded, setPlanExpanded] = useState(false);
+  const visibleTasks = planExpanded ? tasks : tasks.slice(0, COLLAPSED_TASK_COUNT);
+  const hiddenCount = tasks.length - COLLAPSED_TASK_COUNT;
 
   return <AppShell>
     <div className="coach-rise">
@@ -22,7 +27,7 @@ export default function DashboardPage() {
       ) : <div className="space-y-6">
         <section className="relative overflow-hidden rounded-[26px] bg-sidebar p-6 text-sidebar-foreground shadow-xl shadow-sidebar/20 sm:p-8">
           <div className="absolute -right-8 -top-20 h-64 w-64 rounded-full border-[36px] border-accent/15" /><div className="absolute -bottom-24 right-28 h-48 w-48 rounded-full border-[20px] border-sidebar-foreground/5" />
-          <div className="relative grid gap-8 lg:grid-cols-[1.1fr_.9fr] lg:items-center">
+          <div className="relative grid grid-cols-1 gap-8 lg:grid-cols-[1.1fr_.9fr] lg:items-center">
             <div><div className="mb-5 flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.16em] text-sidebar-foreground/55"><span className="h-1.5 w-1.5 rounded-full bg-accent" /> Your study desk</div>
               <p className="max-w-md font-display text-3xl font-semibold leading-[1.1] tracking-[-0.04em] sm:text-[40px]">One clear session<br />for <span className="text-accent">{data.courseName || "your course"}</span>.</p>
               <p className="mt-4 max-w-md text-sm leading-relaxed text-sidebar-foreground/65">Start with {data.focusTopic || "your focus topic"} while your attention is fresh. You only need to begin.</p>
@@ -35,11 +40,21 @@ export default function DashboardPage() {
             </div>
           </div>
         </section>
-        <div className="grid gap-6 lg:grid-cols-[1.25fr_.75fr]">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.25fr_.75fr]">
           <section className="rounded-[22px] border border-border bg-card p-5 sm:p-6">
             <div className="mb-5 flex items-end justify-between"><div><p className="font-mono-ui text-[10px] uppercase tracking-[0.16em] text-muted-foreground">The plan</p><h2 className="mt-1 font-display text-2xl font-semibold tracking-[-0.03em] text-primary">Today's rhythm</h2></div><span className="rounded-full bg-secondary px-3 py-1.5 font-mono-ui text-[10px] text-muted-foreground">{completed} of {tasks.length} done</span></div>
-            <div className="space-y-2">{tasks.map((task, index) => <TaskRow key={`${task.label}-${index}`} task={task} index={index} />)}</div>
-            <Link href="/quiz" data-testid="link-plan-quiz" className="mt-5 flex items-center justify-center gap-2 rounded-xl border border-dashed border-border py-3 text-[12px] font-semibold text-muted-foreground transition-colors hover:border-primary/30 hover:bg-secondary hover:text-primary">Open the full plan <ArrowRight className="h-3.5 w-3.5" /></Link>
+            <div className="space-y-2">{visibleTasks.map((task, index) => <TaskRow key={`${task.label}-${index}`} task={task} index={index} />)}</div>
+            {hiddenCount > 0 && (
+              <button
+                type="button"
+                onClick={() => setPlanExpanded((value) => !value)}
+                data-testid="button-toggle-plan"
+                className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border py-3 text-[12px] font-semibold text-muted-foreground transition-colors hover:border-primary/30 hover:bg-secondary hover:text-primary"
+              >
+                {planExpanded ? "Show less" : `Show ${hiddenCount} more ${hiddenCount === 1 ? "activity" : "activities"}`}
+                <ChevronDown className={`h-3.5 w-3.5 transition-transform ${planExpanded ? "rotate-180" : ""}`} />
+              </button>
+            )}
           </section>
           <section className="rounded-[22px] border border-border bg-card p-5 sm:p-6">
             <div className="mb-5 flex items-center gap-2"><div className="flex h-8 w-8 items-center justify-center rounded-xl bg-accent/25 text-primary"><Target className="h-4 w-4" /></div><div><p className="font-mono-ui text-[10px] uppercase tracking-[0.16em] text-muted-foreground">A gentle focus</p><h2 className="mt-0.5 font-display text-xl font-semibold text-primary">Build this next</h2></div></div>
@@ -69,15 +84,44 @@ export default function DashboardPage() {
   </AppShell>;
 }
 
+const TASK_ICON: Record<string, typeof Zap> = { Quiz: Zap, Learn: BookOpen, Review: RotateCcw };
+
+/**
+ * Every task carries the real course (and, where relevant, topic/quiz) it's
+ * about, so the arrow always lands somewhere genuinely useful instead of a
+ * generic "/quiz" — a Learn task opens that exact topic's study guide, a
+ * Review task with a quizId opens that quiz's review, and a mistakes-only
+ * Review task goes to the tutor, which is the only place mistakes are
+ * actually surfaced today.
+ */
+function taskHref(task: Dashboard["tasks"][number]): string {
+  if (task.kind === "Learn" && task.topicName) {
+    return `/course?course=${task.courseId}&tab=topics&topic=${encodeURIComponent(task.topicName)}&guide=1`;
+  }
+  if (task.kind === "Review" && task.quizId) {
+    return `/quiz?course=${task.courseId}&review=${task.quizId}`;
+  }
+  if (task.kind === "Review") {
+    return `/tutor?course=${task.courseId}`;
+  }
+  if (task.kind === "Quiz") {
+    return `/quiz?course=${task.courseId}`;
+  }
+  return `/course?course=${task.courseId}`;
+}
+
 function TaskRow({ task, index }: { task: Dashboard["tasks"][number]; index: number }) {
-  const Icon = task.kind.toLowerCase().includes("quiz") ? Zap : task.kind.toLowerCase().includes("tutor") ? BookOpen : Clock3;
+  const Icon = TASK_ICON[task.kind] ?? Clock3;
   return <div className={`group flex items-center gap-3 rounded-2xl border p-3 transition-colors ${task.completed ? "border-transparent bg-secondary/60" : "border-border hover:border-primary/25 hover:bg-secondary/40"}`} data-testid={`row-task-${index}`}>
     <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${task.completed ? "bg-primary text-primary-foreground" : "bg-accent/25 text-primary"}`}>{task.completed ? <Check className="h-4 w-4" /> : <Icon className="h-4 w-4" />}</div>
-    <div className="min-w-0 flex-1"><p className={`truncate text-[13px] font-semibold ${task.completed ? "text-muted-foreground line-through" : "text-primary"}`}>{task.label}</p><p className="mt-0.5 text-[11px] text-muted-foreground">{task.kind} · {task.duration}</p></div>
-    {!task.completed && <Link href={task.kind.toLowerCase().includes("tutor") ? "/tutor" : "/quiz"} data-testid={`link-task-${index}`} className="rounded-lg p-2 text-muted-foreground opacity-0 transition-all hover:bg-muted hover:text-primary group-hover:opacity-100"><ArrowRight className="h-4 w-4" /></Link>}
+    <div className="min-w-0 flex-1">
+      <p className={`truncate text-[13px] font-semibold ${task.completed ? "text-muted-foreground line-through" : "text-primary"}`}>{task.label}</p>
+      <p className="mt-0.5 truncate text-[11px] text-muted-foreground">{task.kind} · {task.duration} · {task.courseName}</p>
+    </div>
+    {!task.completed && <Link href={taskHref(task)} data-testid={`link-task-${index}`} className="rounded-lg p-2 text-muted-foreground opacity-0 transition-all hover:bg-muted hover:text-primary group-hover:opacity-100"><ArrowRight className="h-4 w-4" /></Link>}
   </div>;
 }
 
 function DashboardSkeleton() {
-  return <div className="space-y-6"><SkeletonBlock className="h-[280px] rounded-[26px]" /><div className="grid gap-6 lg:grid-cols-2"><SkeletonBlock className="h-[310px]" /><SkeletonBlock className="h-[310px]" /></div></div>;
+  return <div className="space-y-6"><SkeletonBlock className="h-[280px] rounded-[26px]" /><div className="grid grid-cols-1 gap-6 lg:grid-cols-2"><SkeletonBlock className="h-[310px]" /><SkeletonBlock className="h-[310px]" /></div></div>;
 }

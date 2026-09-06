@@ -22,7 +22,7 @@ import {
   UploadCloud,
   X,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "wouter";
 import {
   getGetTopicStudyMaterialQueryKey,
@@ -131,7 +131,7 @@ export default function CoursePage() {
           }
         />
         {courseQuery.isLoading ? (
-          <div className="grid gap-6 lg:grid-cols-[.75fr_1.25fr]">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[.75fr_1.25fr]">
             <SkeletonBlock className="h-[520px]" />
             <SkeletonBlock className="h-[520px]" />
           </div>
@@ -150,7 +150,7 @@ export default function CoursePage() {
             }
           />
         ) : (
-          <div className="grid gap-6 lg:grid-cols-[.72fr_1.28fr]">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[.72fr_1.28fr]">
             <aside className="space-y-4">
               <div className="rounded-[22px] border border-border bg-card p-5">
                 <div className="mb-4 flex items-center justify-between">
@@ -285,7 +285,7 @@ export default function CoursePage() {
                   </div>
                 </div>
 
-                <Tabs defaultValue="overview" className="mt-7">
+                <Tabs defaultValue={searchParams.get("tab") ?? "overview"} className="mt-7">
                   <TabsList className="h-auto flex-wrap justify-start gap-1 bg-secondary/60 p-1">
                     <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
                     <TabsTrigger value="topics" data-testid="tab-topics">Topics</TabsTrigger>
@@ -299,7 +299,7 @@ export default function CoursePage() {
                   </TabsContent>
 
                   <TabsContent value="topics" className="mt-6">
-                    <TopicsTab courseId={selected.id} topics={topics} />
+                    <TopicsTab courseId={selected.id} topics={topics} autoOpenTopicName={searchParams.get("guide") === "1" ? searchParams.get("topic") : null} />
                   </TabsContent>
 
                   <TabsContent value="materials" className="mt-6">
@@ -468,9 +468,33 @@ function TopicRow({
 // from (and kept in sync with) the student's own uploaded course materials.
 // ---------------------------------------------------------------------------
 
-function TopicsTab({ courseId, topics }: { courseId: string; topics: CourseTopic[] }) {
+function TopicsTab({
+  courseId,
+  topics,
+  autoOpenTopicName,
+}: {
+  courseId: string;
+  topics: CourseTopic[];
+  autoOpenTopicName?: string | null;
+}) {
   const [expanded, setExpanded] = useState(true);
   const [activeTopic, setActiveTopic] = useState<CourseTopic | null>(null);
+  const autoOpenedRef = useRef(false);
+
+  // Lets a dashboard "Study guide: X" task deep-link straight into that
+  // topic's guide instead of just landing on the Topics tab and leaving the
+  // student to find it themselves. `topics` often arrives after the initial
+  // render (still loading), so this keeps checking until it finds a match
+  // rather than only trying once against an empty list — but only ever
+  // auto-opens once, so it doesn't reopen after the student closes it.
+  useEffect(() => {
+    if (!autoOpenTopicName || autoOpenedRef.current || topics.length === 0) return;
+    const match = topics.find((topic) => topic.name.toLowerCase() === autoOpenTopicName.toLowerCase());
+    if (match) {
+      setActiveTopic(match);
+      autoOpenedRef.current = true;
+    }
+  }, [autoOpenTopicName, topics]);
 
   return (
     <div>

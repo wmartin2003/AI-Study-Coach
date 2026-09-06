@@ -690,12 +690,16 @@ components:
         term: { type: string }
     StudyTask:
       type: object
-      required: [label, duration, kind, completed]
+      required: [label, duration, kind, completed, courseId, courseName, topicName, quizId]
       properties:
         label: { type: string }
         duration: { type: string }
-        kind: { type: string }
+        kind: { type: string, description: "Review, Learn, or Quiz." }
         completed: { type: boolean }
+        courseId: { type: string }
+        courseName: { type: string }
+        topicName: { type: ["string", "null"] }
+        quizId: { type: ["string", "null"], description: "Set only for a Review task pointing at a specific completed quiz." }
     UpcomingEvent:
       type: object
       required: [id, courseName, type, title, eventDate]

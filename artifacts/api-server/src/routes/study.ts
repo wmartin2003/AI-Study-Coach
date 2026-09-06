@@ -28,6 +28,7 @@ import { aiRateLimit } from "../middlewares/rate-limit";
 import { assembleContext, generateReply, type TutorTurn } from "../lib/tutor";
 import { allocateTopics, generateOverallQuizQuestions, generateQuizQuestions } from "../lib/quiz";
 import { generateTopicOutline, pickPriorityCourse } from "../lib/courses";
+import { buildPlan } from "../lib/plan";
 import { applyQuizResult, touchStreak } from "../lib/mastery";
 import { retrieveRelevantChunks } from "../lib/documents";
 import { awardCompletionBadge } from "../lib/badges";
@@ -231,20 +232,6 @@ router.get("/dashboard", async (req, res) => {
       : `You have an upcoming deadline ${dayLabel}.`;
   }
 
-  const { count: unresolvedMistakes } = await supabase
-    .from("mistakes")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", userId)
-    .eq("resolved", false);
-
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
-  const { count: attemptsToday } = await supabase
-    .from("quiz_attempts")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", userId)
-    .gte("created_at", todayStart.toISOString());
-
   const weekStart = new Date();
   weekStart.setDate(weekStart.getDate() - weekStart.getDay());
   weekStart.setHours(0, 0, 0, 0);
@@ -260,18 +247,7 @@ router.get("/dashboard", async (req, res) => {
     .eq("user_id", userId)
     .eq("level", "mastered");
 
-  const tasks = [
-    (unresolvedMistakes ?? 0) > 0
-      ? { label: "Review mistakes", duration: "10 min", kind: "Review", completed: false }
-      : { label: `Review: ${strongestTopic}`, duration: "10 min", kind: "Review", completed: true },
-    { label: `Learn: ${focusTopic}`, duration: "15 min", kind: "Learn", completed: false },
-    {
-      label: "Practice: 10 questions",
-      duration: "15 min",
-      kind: "Practice",
-      completed: (attemptsToday ?? 0) >= 10,
-    },
-  ];
+  const tasks = await buildPlan(supabase, userId);
 
   return res.json(
     GetDashboardResponse.parse({

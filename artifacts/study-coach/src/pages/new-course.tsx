@@ -74,7 +74,7 @@ export default function NewCoursePage() {
             </Link>
           }
         />
-        <div className="mx-auto grid max-w-[1000px] gap-6 lg:grid-cols-[1fr_330px]">
+        <div className="mx-auto grid grid-cols-1 max-w-[1000px] gap-6 lg:grid-cols-[1fr_330px]">
           <Form {...form}>
             <form onSubmit={submit} className="rounded-[24px] border border-border bg-card p-5 sm:p-8" data-testid="form-create-course">
               <div className="mb-8">

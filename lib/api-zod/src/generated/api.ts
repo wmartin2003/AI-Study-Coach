@@ -128,8 +128,12 @@ export const GetDashboardResponse = zod.object({
   "tasks": zod.array(zod.object({
   "label": zod.string(),
   "duration": zod.string(),
-  "kind": zod.string(),
-  "completed": zod.boolean()
+  "kind": zod.string().describe('Review, Learn, or Quiz.'),
+  "completed": zod.boolean(),
+  "courseId": zod.string(),
+  "courseName": zod.string(),
+  "topicName": zod.string().nullable(),
+  "quizId": zod.string().nullable().describe('Set only for a Review task pointing at a specific completed quiz.')
 })),
   "xp": zod.number(),
   "streak": zod.number(),

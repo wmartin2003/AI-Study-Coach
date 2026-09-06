@@ -154,8 +154,18 @@ export interface CourseUpdateInput {
 export interface StudyTask {
   label: string;
   duration: string;
+  /** Review, Learn, or Quiz. */
   kind: string;
   completed: boolean;
+  courseId: string;
+  courseName: string;
+  /** @nullable */
+  topicName: string | null;
+  /**
+     * Set only for a Review task pointing at a specific completed quiz.
+     * @nullable
+     */
+  quizId: string | null;
 }
 
 export interface UpcomingEvent {

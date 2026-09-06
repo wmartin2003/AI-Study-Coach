@@ -57,7 +57,9 @@ export default function QuizPage() {
   const [feedback, setFeedback] = useState<QuizFeedback | null>(null);
   const [sessionCorrect, setSessionCorrect] = useState(0);
   const [sessionXp, setSessionXp] = useState(0);
-  const [reviewQuizId, setReviewQuizId] = useState<string | null>(null);
+  // Lets a dashboard "Review: X" task deep-link straight into that quiz's
+  // review dialog instead of just landing on the hub.
+  const [reviewQuizId, setReviewQuizId] = useState<string | null>(searchParams.get("review"));
 
   useEffect(() => {
     if (!courses.length) return;
@@ -190,7 +192,7 @@ export default function QuizPage() {
             ) : (
               <>
                 {activeBanner?.id && <ContinueBanner active={activeBanner} onContinue={resumeActive} />}
-                <div className="grid gap-6 lg:grid-cols-[.72fr_1.28fr]">
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-[.72fr_1.28fr]">
                   <CourseList courses={courses} selectedId={selectedCourseId} onSelect={setSelectedCourseId} />
                   {selectedCourse && (
                     <CourseQuizHub
@@ -442,7 +444,7 @@ function PastQuizRow({ quiz, onReview }: { quiz: CompletedQuiz; onReview: () => 
 
 function QuizHubSkeleton() {
   return (
-    <div className="grid gap-6 lg:grid-cols-[.72fr_1.28fr]">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[.72fr_1.28fr]">
       <SkeletonBlock className="h-[280px]" />
       <SkeletonBlock className="h-[520px]" />
     </div>
