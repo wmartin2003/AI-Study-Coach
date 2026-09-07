@@ -1,0 +1,35 @@
+# Render Blueprint for the API host. Render provides PORT automatically for
+# web services — don't set it here. Every other required/used env var is
+# listed below; "sync: false" values are secrets or deployment-specific
+# settings Render will prompt for in its dashboard rather than have baked
+# into this file. Plain "value" entries are safe, non-secret defaults you
+# can edit directly here (see README.md's "Spend and signup caps" section).
+services:
+  - type: web
+    name: ai-study-coach-api
+    env: node
+    plan: free
+    buildCommand: pnpm install --frozen-lockfile && pnpm --filter @workspace/api-server run build
+    startCommand: node artifacts/api-server/dist/index.mjs
+    healthCheckPath: /api/healthz
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: SUPABASE_SECRET_KEY
+        sync: false
+      # The Vercel deployment's URL (e.g. https://your-app.vercel.app) — CORS
+      # rejects every other origin once NODE_ENV=production.
+      - key: ALLOWED_ORIGINS
+        sync: false
+      - key: USER_MONTHLY_BUDGET_USD
+        value: "1"
+      - key: SIGNUP_REQUIRE_INVITE
+        value: "false"
+      - key: MAX_ACCOUNTS
+        value: "40"

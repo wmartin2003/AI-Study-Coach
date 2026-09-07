@@ -1,13 +1,7 @@
 import { Link } from "wouter";
-import { ArrowLeft, AlertTriangle } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { BrandMark } from "@/components/app-shell";
 
-/**
- * DRAFT — not yet reviewed. The structure below is a placeholder for real
- * legal copy the app owner will write; every section is a stand-in for
- * content that needs to be checked (and likely reviewed by a lawyer) before
- * this page is treated as an actual privacy policy.
- */
 export default function PrivacyPage() {
   return (
     <div className="grain min-h-[100dvh] bg-background text-foreground">
@@ -19,61 +13,63 @@ export default function PrivacyPage() {
       </header>
 
       <main className="mx-auto max-w-[820px] px-5 pb-24 sm:px-8">
-        <div className="mb-8 flex items-start gap-3 rounded-2xl border border-destructive/30 bg-destructive/5 p-5" data-testid="notice-privacy-draft">
-          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
-          <div>
-            <p className="text-sm font-semibold text-destructive">Draft — not yet reviewed</p>
-            <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">
-              This page lays out the structure of what a privacy policy needs to cover. The specifics below are
-              placeholders, not final legal language — they haven't been reviewed by a lawyer and shouldn't be relied
-              on as a real privacy policy yet.
-            </p>
-          </div>
-        </div>
-
-        <h1 className="font-display text-3xl font-semibold tracking-[-0.03em] text-primary">Privacy Policy (Draft)</h1>
-        <p className="mt-2 text-sm text-muted-foreground">Last updated: not yet published.</p>
+        <h1 className="font-display text-3xl font-semibold tracking-[-0.03em] text-primary">Privacy</h1>
+        <p className="mt-3 max-w-[600px] text-sm leading-relaxed text-muted-foreground">
+          This is a small, independently-run beta, not a company with a legal team — so instead of boilerplate, here's
+          a plain description of what this app actually does with your data.
+        </p>
 
         <div className="mt-10 space-y-10">
-          <Section title="What we collect">
-            <p>Placeholder — to be filled in with the real, complete list. At minimum, today the app collects:</p>
-            <ul className="mt-3 list-disc space-y-1.5 pl-5">
-              <li>Account info: name and email address.</li>
-              <li>Academic content you provide: course names, topics, syllabi, notes, and other documents you upload.</li>
-              <li>Usage data: quiz answers, tutor conversations, study activity, and mastery/progress scores.</li>
+          <Section title="What's collected">
+            <ul className="list-disc space-y-1.5 pl-5">
+              <li>Account details: your name and email address.</li>
+              <li>Anything you add about your courses: course names, topics, deadlines, and any documents you upload (syllabi, notes, slides).</li>
+              <li>Your activity in the app: tutor conversations, quiz answers and results, and the mastery/progress scores calculated from them.</li>
             </ul>
           </Section>
 
           <Section title="Where it's stored">
             <p>
-              Placeholder. Today: account and academic data is stored in Supabase (Postgres + file storage) under
-              access controls scoped to each student's own account.
+              In Supabase, a hosted Postgres database and file storage provider, in their Canada (Central) region.
+              Every table is protected by database-level access rules, so the API only ever reads or writes rows
+              belonging to your own account.
             </p>
           </Section>
 
-          <Section title="How AI processing works">
+          <Section title="How the AI features work">
             <p>
-              Placeholder. Today: when you use the tutor, adaptive quizzes, or study guides, relevant excerpts of your
-              uploaded documents and course data are sent to Anthropic (the maker of Claude) to generate a response.
-              Anthropic processes that content to return the result; the specifics of retention and use on their end
-              should be described here once confirmed.
+              When you use the tutor, adaptive quizzes, or study guides, relevant excerpts of your uploaded documents
+              and course data are sent to Anthropic (the company behind Claude) to generate a response. Per
+              Anthropic's API terms, that content is used only to generate your response — not to train their models.
             </p>
           </Section>
 
-          <Section title="Who can see your data">
-            <p>Placeholder — to describe who at the company (if anyone) can access student data, and under what circumstances.</p>
-          </Section>
-
-          <Section title="How to delete your account">
+          <Section title="Who else sees it">
             <p>
-              Today: Settings → Delete account permanently removes your account and all associated data (courses,
-              documents, conversations, quizzes, and progress). This section should describe the real timeline and
-              any data that persists after deletion (e.g. backups), once confirmed.
+              Nobody, by default. This data isn't sold, shared with advertisers, or used for anything besides running
+              the app for you. The only outside parties involved are Supabase (hosting the database and files) and
+              Anthropic (generating AI responses, as above).
             </p>
           </Section>
 
-          <Section title="Contact">
-            <p>Placeholder — an email address or form for privacy questions and requests.</p>
+          <Section title="How long it's kept">
+            <p>
+              For as long as your account exists — there's no automatic deletion schedule beyond that today.
+            </p>
+          </Section>
+
+          <Section title="Deleting your data">
+            <p>
+              Settings → Delete account permanently removes your account and everything tied to it — courses,
+              documents, tutor conversations, quizzes, and progress — immediately. This can't be undone.
+            </p>
+          </Section>
+
+          <Section title="Questions">
+            <p>
+              This is run by one person, not a support team — reach out however you normally would (the same place
+              you got your invite, or reply to any email from this app) with any question or deletion request.
+            </p>
           </Section>
         </div>
       </main>
