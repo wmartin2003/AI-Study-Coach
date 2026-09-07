@@ -1,14 +1,14 @@
+import { logger } from "./logger";
 import { supabaseAdmin } from "./supabase";
 
 export type AiFeature = "tutor" | "quiz" | "study_guide" | "syllabus" | "topics";
 
 /**
- * Dollars per million tokens, by model id. These are placeholder numbers,
- * not verified pricing — see the TODO below. Everything downstream
- * (estimateCostUsd, the budget checks, the invites CLI's spend report) is
- * only as accurate as this table.
+ * Dollars per million tokens, by model id.
  *
- * TODO: verify against https://claude.com/pricing before launch.
+ * Rates taken from https://claude.com/pricing on 2026-09-07. Pricing can
+ * change — re-verify against that page before trusting these for a real
+ * bill, and update this comment's date whenever you do.
  */
 export const MODEL_RATES: Record<string, { inputPerMillion: number; outputPerMillion: number }> = {
   "claude-sonnet-5": { inputPerMillion: 3, outputPerMillion: 15 },
@@ -17,8 +17,14 @@ export const MODEL_RATES: Record<string, { inputPerMillion: number; outputPerMil
 const DEFAULT_RATE = { inputPerMillion: 3, outputPerMillion: 15 };
 
 export function estimateCostUsd(model: string, inputTokens: number, outputTokens: number): number {
-  const rate = MODEL_RATES[model] ?? DEFAULT_RATE;
-  return (inputTokens / 1_000_000) * rate.inputPerMillion + (outputTokens / 1_000_000) * rate.outputPerMillion;
+  const rate = MODEL_RATES[model];
+  if (!rate) {
+    // Silently under- (or over-) reporting real spend is the failure mode
+    // that matters here — a missing rate should be loud, not invisible.
+    logger.warn({ model }, "No pricing entry for this model; falling back to the default rate. Add it to MODEL_RATES.");
+  }
+  const effectiveRate = rate ?? DEFAULT_RATE;
+  return (inputTokens / 1_000_000) * effectiveRate.inputPerMillion + (outputTokens / 1_000_000) * effectiveRate.outputPerMillion;
 }
 
 export class QuotaExceededError extends Error {

@@ -77,12 +77,13 @@ router.post("/signup", signupRateLimit, async (req, res) => {
 });
 
 async function releaseInviteCode(code: string): Promise<void> {
-  const { data: row } = await supabaseAdmin.from("invite_codes").select("used_count").eq("code", code).maybeSingle();
-  if (!row) return;
-  await supabaseAdmin
-    .from("invite_codes")
-    .update({ used_count: Math.max(0, row.used_count - 1) })
-    .eq("code", code);
+  // A single atomic SQL statement (supabase/migrations/0009_lock_down_functions.sql)
+  // rather than a select-then-update from here — the same reasoning as
+  // redeem_invite_code: two concurrent failed signups reading the same
+  // used_count and both writing back count - 1 would give back only one use
+  // instead of two.
+  const { error } = await supabaseAdmin.rpc("release_invite_code", { code });
+  if (error) logger.error({ err: error, code }, "Failed to release invite code after failed signup");
 }
 
 export default router;
