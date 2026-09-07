@@ -6,7 +6,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://REPLACE_WITH_YOUR_API_HOST/api/$1"
+      "destination": "https://ai-study-coach-api.onrender.com/api/$1"
     },
     {
       "source": "/(.*)",
