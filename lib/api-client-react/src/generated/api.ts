@@ -49,6 +49,7 @@ import type {
   QuizReview,
   QuizStartInput,
   SearchInstitutionsParams,
+  SignupConfig,
   SignupInput,
   SyllabusExtraction,
   TopicStudyMaterial,
@@ -172,7 +173,7 @@ export const getSignupUrl = () => {
 }
 
 /**
- * @summary Create a new account with a valid invite code (public — no auth required)
+ * @summary Create a new account, with an invite code only when SIGNUP_REQUIRE_INVITE is set (public — no auth required)
  */
 export const signup = async (signupInput: SignupInput, options?: Parameters<typeof customFetch>[1]): Promise<AccountCreated> => {
 
@@ -221,7 +222,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type SignupMutationError = ErrorType<unknown>
 
     /**
- * @summary Create a new account with a valid invite code (public — no auth required)
+ * @summary Create a new account, with an invite code only when SIGNUP_REQUIRE_INVITE is set (public — no auth required)
  */
 export const useSignup = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof signup>>, TError,{data: BodyType<SignupInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -233,6 +234,83 @@ export const useSignup = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getSignupMutationOptions(options));
     }
+
+export const getGetSignupConfigUrl = () => {
+
+
+
+
+  return `/api/signup/config`
+}
+
+/**
+ * @summary Whether signup is currently open and whether it requires an invite code (public — no auth required)
+ */
+export const getSignupConfig = async ( options?: Parameters<typeof customFetch>[1]): Promise<SignupConfig> => {
+
+  return customFetch<SignupConfig>(getGetSignupConfigUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSignupConfigQueryKey = () => {
+    return [
+    `/api/signup/config`
+    ] as const;
+    }
+
+
+export const getGetSignupConfigQueryOptions = <TData = Awaited<ReturnType<typeof getSignupConfig>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSignupConfig>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSignupConfigQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSignupConfig>>> = ({ signal }) => getSignupConfig({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSignupConfig>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSignupConfigQueryResult = NonNullable<Awaited<ReturnType<typeof getSignupConfig>>>
+export type GetSignupConfigQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Whether signup is currently open and whether it requires an invite code (public — no auth required)
+ */
+
+export function useGetSignupConfig<TData = Awaited<ReturnType<typeof getSignupConfig>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSignupConfig>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSignupConfigQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getJoinWaitlistUrl = () => {
 

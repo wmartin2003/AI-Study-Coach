@@ -41,6 +41,7 @@ export * from './quizReviewQuestion';
 export * from './quizStartInput';
 export * from './quizStartInputFocus';
 export * from './searchInstitutionsParams';
+export * from './signupConfig';
 export * from './signupInput';
 export * from './studyTask';
 export * from './syllabusExtraction';

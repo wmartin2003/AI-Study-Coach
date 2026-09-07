@@ -54,11 +54,29 @@ cp artifacts/study-coach/.env.example artifacts/study-coach/.env
 | `VITE_SUPABASE_URL` | Same as `SUPABASE_URL` |
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | Same as `SUPABASE_PUBLISHABLE_KEY` |
 | `ALLOWED_ORIGINS` | Comma-separated list of origins allowed to call the API in production (e.g. `https://app.example.com`). Falls back to `localhost` in development. |
-| `USER_MONTHLY_BUDGET_USD` | Optional. Default per-user monthly AI spend cap in USD (default `2` if unset); a student's `profiles.monthly_budget_usd`, when set, overrides this for that student. |
+| `USER_MONTHLY_BUDGET_USD` | Optional. Default per-user monthly AI spend cap in USD (default **$1.00** if unset); a student's `profiles.monthly_budget_usd`, when set, overrides this for that student. |
+| `SIGNUP_REQUIRE_INVITE` | Optional, default `false`. See "Spend and signup caps" below. |
+| `MAX_ACCOUNTS` | Optional, default `40`. See "Spend and signup caps" below. |
 
 `artifacts/study-coach/.env` only needs the two `VITE_*` values (Vite only exposes env vars prefixed `VITE_` to the frontend bundle — this is what keeps the secret key out of the browser).
 
 Never commit `.env` files — they're already gitignored.
+
+### Spend and signup caps
+
+Three independent ceilings, checked in this order on every AI call and on every signup:
+
+1. **`ai_service_state.monthly_budget_usd`** (default **$35/month**, a database row, not an env var) — a global kill switch. Once this month's total spend across every student reaches it, every AI call in the app returns 503 until next month (or until you raise it). Change it directly in Supabase (`update ai_service_state set monthly_budget_usd = 50 where id = 1;`) or flip `ai_service_state.paused = true` to stop AI calls immediately regardless of spend.
+2. **`USER_MONTHLY_BUDGET_USD`** (default **$1.00/month**, env var) — the default per-student cap. A student who hits it gets a 429 with a clear message; everything else in the app keeps working.
+3. **`MAX_ACCOUNTS`** (default **40**, env var) — a hard ceiling on total accounts. `POST /api/signup` returns 503 once `profiles` has this many rows.
+
+**To raise a specific student's cap** (e.g. they're doing something that legitimately needs more room), set it on their profile row rather than raising the global default:
+
+```sql
+update profiles set monthly_budget_usd = 5 where id = '<their user id>';
+```
+
+**To open or close signup entirely**, set `SIGNUP_REQUIRE_INVITE=true` on the API host and redeploy — invite codes (`pnpm --filter @workspace/scripts run invites -- generate`) become required again immediately, with no code changes. The `invite_codes` table and redemption path are always intact; this env var is the only thing that decides whether they're enforced.
 
 ## 3. Install dependencies
 

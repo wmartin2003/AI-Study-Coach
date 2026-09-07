@@ -1,11 +1,22 @@
 import { useState } from "react";
 import { Link } from "wouter";
 import { ArrowRight, Brain, Calendar, Check, FileUp, ListChecks, Mail, Sparkles, Target, Upload } from "lucide-react";
-import { useJoinWaitlist } from "@workspace/api-client-react";
+import { getGetSignupConfigQueryKey, useGetSignupConfig, useJoinWaitlist } from "@workspace/api-client-react";
 import { BrandMark, Button } from "@/components/app-shell";
 import { getApiErrorMessage } from "@/lib/format";
 
 export default function LandingPage() {
+  // Signup being open or closed (and whether it needs a code) is entirely
+  // server-side state (SIGNUP_REQUIRE_INVITE, MAX_ACCOUNTS) — asking the API
+  // rather than hardcoding it here means this page and login.tsx can never
+  // disagree with each other or with the two separately-deployed hosts.
+  const configQuery = useGetSignupConfig({ query: { queryKey: getGetSignupConfigQueryKey() } });
+  // Default to "closed" (the safer assumption) while still loading — this
+  // page shouldn't promise "create your account" for even a moment if it
+  // turns out signups are actually shut.
+  const open = configQuery.data?.open ?? false;
+  const requiresInviteCode = configQuery.data?.requiresInviteCode ?? true;
+
   return (
     <div className="grain min-h-[100dvh] bg-background text-foreground">
       <header className="mx-auto flex max-w-[1200px] items-center justify-between px-5 py-6 sm:px-8">
@@ -20,10 +31,10 @@ export default function LandingPage() {
       </header>
 
       <main className="mx-auto max-w-[1200px] px-5 pb-24 sm:px-8">
-        <Hero />
+        <Hero open={open} requiresInviteCode={requiresInviteCode} />
         <Features />
         <HowItWorks />
-        <WaitlistSection />
+        {open ? <OpenSignupSection /> : <WaitlistSection />}
       </main>
 
       <footer className="border-t border-border/70">
@@ -38,11 +49,11 @@ export default function LandingPage() {
   );
 }
 
-function Hero() {
+function Hero({ open, requiresInviteCode }: { open: boolean; requiresInviteCode: boolean }) {
   return (
     <section className="pt-10 text-center sm:pt-16">
       <div className="mx-auto mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-1.5 font-mono-ui text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-        <span className="h-1.5 w-1.5 rounded-full bg-accent" /> Closed beta
+        <span className="h-1.5 w-1.5 rounded-full bg-accent" /> {open ? "Open for students" : "Closed beta"}
       </div>
       <h1 className="mx-auto max-w-[820px] font-display text-4xl font-semibold leading-[1.08] tracking-[-0.04em] text-primary sm:text-6xl">
         Upload your syllabus. Get a plan that covers <span className="text-accent">every</span> course.
@@ -52,13 +63,21 @@ function Hero() {
         assign, then tells you what to work on today — across all of them, prioritized by what's due soonest.
       </p>
       <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-        <a href="#waitlist" data-testid="link-hero-waitlist">
-          <Button variant="accent" className="px-6 py-3.5 text-sm">
-            Join the waitlist <ArrowRight className="h-4 w-4" />
-          </Button>
-        </a>
+        {open ? (
+          <Link href="/login?mode=sign-up" data-testid="link-hero-signup">
+            <Button variant="accent" className="px-6 py-3.5 text-sm">
+              Create your account <ArrowRight className="h-4 w-4" />
+            </Button>
+          </Link>
+        ) : (
+          <a href="#waitlist" data-testid="link-hero-waitlist">
+            <Button variant="accent" className="px-6 py-3.5 text-sm">
+              Join the waitlist <ArrowRight className="h-4 w-4" />
+            </Button>
+          </a>
+        )}
         <Link href="/login" data-testid="link-hero-sign-in" className="text-[13px] font-semibold text-muted-foreground hover:text-primary">
-          Already have an invite code? Sign in →
+          {requiresInviteCode ? "Already have an invite code? Sign in →" : "Already have an account? Sign in →"}
         </Link>
       </div>
     </section>
@@ -147,6 +166,33 @@ function HowItWorks() {
   );
 }
 
+function OpenSignupSection() {
+  return (
+    <section className="mx-auto mt-20 max-w-[560px] text-center sm:mt-28">
+      <div className="mb-4 flex items-center justify-center gap-2 text-accent">
+        <Sparkles className="h-4 w-4" />
+        <span className="font-mono-ui text-[10px] uppercase tracking-[0.18em]">Open for students</span>
+      </div>
+      <h2 className="font-display text-3xl font-semibold tracking-[-0.03em] text-primary sm:text-4xl">Ready to start?</h2>
+      <p className="mx-auto mt-3 max-w-[420px] text-sm leading-relaxed text-muted-foreground">
+        No invite needed right now — add a course, upload your syllabus, and your first plan is ready in minutes.
+      </p>
+      <Link href="/login?mode=sign-up" data-testid="link-open-signup" className="mt-7 inline-block">
+        <Button variant="accent" className="px-6 py-3.5 text-sm">
+          Create your account <ArrowRight className="h-4 w-4" />
+        </Button>
+      </Link>
+      <p className="mt-10 text-[13px] text-muted-foreground">
+        Already have an account?{" "}
+        <Link href="/login" data-testid="link-open-signup-sign-in" className="font-semibold text-primary hover:underline">
+          Sign in here
+        </Link>
+        .
+      </p>
+    </section>
+  );
+}
+
 function WaitlistSection() {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
@@ -209,7 +255,7 @@ function WaitlistSection() {
       </p>
 
       <p className="mt-10 text-[13px] text-muted-foreground">
-        Already have a code?{" "}
+        Already have an account or a code?{" "}
         <Link href="/login" data-testid="link-waitlist-sign-in" className="font-semibold text-primary hover:underline">
           Sign in here
         </Link>

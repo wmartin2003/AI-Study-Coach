@@ -30,7 +30,7 @@ paths:
     post:
       operationId: signup
       tags: [study]
-      summary: Create a new account with a valid invite code (public — no auth required)
+      summary: Create a new account, with an invite code only when SIGNUP_REQUIRE_INVITE is set (public — no auth required)
       requestBody:
         required: true
         content:
@@ -44,6 +44,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AccountCreated"
+  /signup/config:
+    get:
+      operationId: getSignupConfig
+      tags: [study]
+      summary: Whether signup is currently open and whether it requires an invite code (public — no auth required)
+      responses:
+        "200":
+          description: Signup configuration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SignupConfig"
   /waitlist:
     post:
       operationId: joinWaitlist
@@ -633,13 +645,19 @@ components:
         - status
     SignupInput:
       type: object
-      required: [email, password, firstName, lastName, inviteCode]
+      required: [email, password, firstName, lastName]
       properties:
         email: { type: string }
         password: { type: string }
         firstName: { type: string }
         lastName: { type: string }
-        inviteCode: { type: string }
+        inviteCode: { type: string, description: "Required only when GET /signup/config reports requiresInviteCode: true; ignored otherwise." }
+    SignupConfig:
+      type: object
+      required: [open, requiresInviteCode]
+      properties:
+        open: { type: boolean, description: "False once the account cap (MAX_ACCOUNTS) is reached." }
+        requiresInviteCode: { type: boolean, description: "Mirrors the server's SIGNUP_REQUIRE_INVITE env var." }
     AccountCreated:
       type: object
       required: [ok]

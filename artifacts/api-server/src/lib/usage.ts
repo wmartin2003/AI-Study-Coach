@@ -75,7 +75,7 @@ export async function assertBudgetAvailable(userId: string): Promise<void> {
   if (globalError) throw globalError;
 
   const globalSpend = (globalRows ?? []).reduce((sum, row) => sum + Number(row.estimated_cost_usd), 0);
-  const globalBudget = Number(state?.monthly_budget_usd ?? 40);
+  const globalBudget = Number(state?.monthly_budget_usd ?? 35);
   if (globalSpend >= globalBudget) {
     throw new ServicePausedError();
   }
@@ -87,7 +87,7 @@ export async function assertBudgetAvailable(userId: string): Promise<void> {
     .maybeSingle();
   if (profileError) throw profileError;
 
-  const defaultUserBudget = Number(process.env["USER_MONTHLY_BUDGET_USD"] ?? 2);
+  const defaultUserBudget = Number(process.env["USER_MONTHLY_BUDGET_USD"] ?? 1);
   const userBudget = profile?.monthly_budget_usd != null ? Number(profile.monthly_budget_usd) : defaultUserBudget;
 
   const { data: userRows, error: userError } = await supabaseAdmin

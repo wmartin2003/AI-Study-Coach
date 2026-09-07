@@ -11,5 +11,6 @@ export interface SignupInput {
   password: string;
   firstName: string;
   lastName: string;
-  inviteCode: string;
+  /** Required only when GET /signup/config reports requiresInviteCode: true; ignored otherwise. */
+  inviteCode?: string;
 }

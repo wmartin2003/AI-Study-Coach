@@ -18,18 +18,27 @@ export const HealthCheckResponse = zod.object({
 
 
 /**
- * @summary Create a new account with a valid invite code (public — no auth required)
+ * @summary Create a new account, with an invite code only when SIGNUP_REQUIRE_INVITE is set (public — no auth required)
  */
 export const SignupBody = zod.object({
   "email": zod.string(),
   "password": zod.string(),
   "firstName": zod.string(),
   "lastName": zod.string(),
-  "inviteCode": zod.string()
+  "inviteCode": zod.string().optional().describe('Required only when GET \/signup\/config reports requiresInviteCode: true; ignored otherwise.')
 })
 
 export const SignupResponse = zod.object({
   "ok": zod.boolean()
+})
+
+
+/**
+ * @summary Whether signup is currently open and whether it requires an invite code (public — no auth required)
+ */
+export const GetSignupConfigResponse = zod.object({
+  "open": zod.boolean().describe('False once the account cap (MAX_ACCOUNTS) is reached.'),
+  "requiresInviteCode": zod.boolean().describe('Mirrors the server\'s SIGNUP_REQUIRE_INVITE env var.')
 })
 
 

@@ -14,7 +14,15 @@ export interface SignupInput {
   password: string;
   firstName: string;
   lastName: string;
-  inviteCode: string;
+  /** Required only when GET /signup/config reports requiresInviteCode: true; ignored otherwise. */
+  inviteCode?: string;
+}
+
+export interface SignupConfig {
+  /** False once the account cap (MAX_ACCOUNTS) is reached. */
+  open: boolean;
+  /** Mirrors the server's SIGNUP_REQUIRE_INVITE env var. */
+  requiresInviteCode: boolean;
 }
 
 export interface AccountCreated {

@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useSearchParams } from "wouter";
 import { BookOpen, Mail } from "lucide-react";
-import { useSignup } from "@workspace/api-client-react";
+import { getGetSignupConfigQueryKey, useGetSignupConfig, useSignup } from "@workspace/api-client-react";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/app-shell";
 import { getApiErrorMessage } from "@/lib/format";
@@ -10,7 +10,8 @@ type Mode = "sign-in" | "sign-up";
 
 export default function LoginPage() {
   const [, setLocation] = useLocation();
-  const [mode, setMode] = useState<Mode>("sign-in");
+  const [searchParams] = useSearchParams();
+  const [mode, setMode] = useState<Mode>(searchParams.get("mode") === "sign-up" ? "sign-up" : "sign-in");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -20,6 +21,15 @@ export default function LoginPage() {
   const [notice, setNotice] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const signup = useSignup();
+  // The API and frontend are deployed separately, so signup state (whether
+  // it's open, whether it needs a code) comes from the API rather than
+  // duplicating env vars across both hosts and risking them disagreeing.
+  const configQuery = useGetSignupConfig({ query: { queryKey: getGetSignupConfigQueryKey() } });
+  const requiresInviteCode = configQuery.data?.requiresInviteCode ?? false;
+  // Default to "open" while the config is still loading — briefly showing
+  // the form is a much smaller cost than briefly showing "signups are
+  // closed" when they aren't.
+  const signupOpen = configQuery.data?.open ?? true;
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -38,7 +48,9 @@ export default function LoginPage() {
         // public, so an invite-code check here would be bypassable. The
         // server verifies the code and creates the user with the service
         // role; we sign in with the same credentials right after.
-        await signup.mutateAsync({ data: { email, password, firstName, lastName, inviteCode } });
+        await signup.mutateAsync({
+          data: { email, password, firstName, lastName, inviteCode: requiresInviteCode ? inviteCode : undefined },
+        });
         const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
         if (signInError) {
           // Email confirmation may be required at the project level (a
@@ -89,6 +101,20 @@ export default function LoginPage() {
             {mode === "sign-in" ? "Ready to pick up where you left off?" : "Start your study path."}
           </h1>
 
+          {mode === "sign-up" && !signupOpen ? (
+            <div className="mt-7" data-testid="status-signup-closed">
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                We've reached today's limit on new accounts. Join the waitlist and I'll open a spot for you.
+              </p>
+              <a
+                href="/#waitlist"
+                data-testid="link-signup-closed-waitlist"
+                className="mt-5 inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-[13px] font-semibold text-primary-foreground transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/15"
+              >
+                <Mail className="h-4 w-4" /> Join the waitlist
+              </a>
+            </div>
+          ) : (
           <form onSubmit={submit} className="mt-7 space-y-4" data-testid="form-auth">
             {mode === "sign-up" && (
               <div className="grid grid-cols-2 gap-3">
@@ -153,7 +179,7 @@ export default function LoginPage() {
                 className="form-input mt-2"
               />
             </div>
-            {mode === "sign-up" && (
+            {mode === "sign-up" && requiresInviteCode && (
               <div>
                 <label className="block text-[13px] font-semibold text-primary" htmlFor="inviteCode">
                   Invite code
@@ -198,6 +224,7 @@ export default function LoginPage() {
               </button>
             )}
           </form>
+          )}
         </div>
 
         <button
