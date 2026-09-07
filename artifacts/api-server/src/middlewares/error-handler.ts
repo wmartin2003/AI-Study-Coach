@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import { logger } from "../lib/logger";
+import { QuotaExceededError, ServicePausedError } from "../lib/usage";
 
 type ZodIssueLike = { path: (string | number)[]; message: string };
 
@@ -28,6 +29,18 @@ const MULTER_ERROR_MESSAGES: Record<string, string> = {
  * safe responses — never a raw stack trace or file path to the client.
  */
 export function errorHandler(err: unknown, req: Request, res: Response, _next: NextFunction) {
+  // Named error classes, not string matching, so these can never be
+  // confused with an unrelated error that happens to share a message.
+  if (err instanceof QuotaExceededError) {
+    res.status(429).json({ error: err.message });
+    return;
+  }
+
+  if (err instanceof ServicePausedError) {
+    res.status(503).json({ error: err.message });
+    return;
+  }
+
   if (isZodError(err)) {
     res.status(400).json({
       error: "Invalid request",

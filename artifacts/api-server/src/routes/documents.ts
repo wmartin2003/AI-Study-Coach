@@ -12,6 +12,7 @@ import {
 import { requireAuth } from "../middlewares/auth";
 import { processDocument } from "../lib/documents";
 import { extractSyllabusInfo } from "../lib/syllabus";
+import { QuotaExceededError, ServicePausedError } from "../lib/usage";
 import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
@@ -183,13 +184,14 @@ router.post("/documents/:documentId/extract", async (req, res) => {
   }
 
   try {
-    const extraction = await extractSyllabusInfo(chunks.map((c) => c.content).join("\n\n"));
+    const extraction = await extractSyllabusInfo(req.user!.id, chunks.map((c) => c.content).join("\n\n"));
     await supabase
       .from("documents")
       .update({ extraction, document_type: "syllabus", updated_at: new Date().toISOString() })
       .eq("id", doc.id);
     return res.json(ExtractSyllabusResponse.parse(extraction));
   } catch (err) {
+    if (err instanceof QuotaExceededError || err instanceof ServicePausedError) throw err;
     logger.error({ err, documentId: doc.id }, "Syllabus extraction failed");
     return res.status(502).json({ error: "Couldn't read this document just now." });
   }

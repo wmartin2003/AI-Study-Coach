@@ -9,6 +9,34 @@ export interface HealthStatus {
   status: string;
 }
 
+export interface SignupInput {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  /** Required only when GET /signup/config reports requiresInviteCode: true; ignored otherwise. */
+  inviteCode?: string;
+}
+
+export interface SignupConfig {
+  /** False once the account cap (MAX_ACCOUNTS) is reached. */
+  open: boolean;
+  /** Mirrors the server's SIGNUP_REQUIRE_INVITE env var. */
+  requiresInviteCode: boolean;
+}
+
+export interface AccountCreated {
+  ok: boolean;
+}
+
+export interface WaitlistInput {
+  email: string;
+}
+
+export interface WaitlistJoined {
+  ok: boolean;
+}
+
 export interface Profile {
   id: string;
   /** @nullable */
@@ -25,17 +53,34 @@ export interface Profile {
   learningStyle?: string | null;
   /** @nullable */
   country?: string | null;
+  /**
+     * ISO 3166-1 alpha-2 code, set only via the country picker.
+     * @nullable
+     */
+  countryCode?: string | null;
   /** @nullable */
   educationLevel?: string | null;
   /** @nullable */
   institutionName?: string | null;
   /** @nullable */
+  institutionCountryCode?: string | null;
+  /**
+     * Official site URL — present only when the institution was selected from a lookup result, i.e. verified rather than freely typed.
+     * @nullable
+     */
+  institutionWebsite?: string | null;
+  /** @nullable */
+  institutionDomain?: string | null;
+  /** @nullable */
   programMajor?: string | null;
+  /** @nullable */
+  degree?: string | null;
   /** @nullable */
   gradeYear?: string | null;
   /** @nullable */
   expectedCompletionDate?: string | null;
   onboardingCompleted: boolean;
+  personalizationEnabled?: boolean;
 }
 
 export interface ProfileInput {
@@ -46,12 +91,32 @@ export interface ProfileInput {
   studyMinutesPerDay?: number;
   learningStyle?: string;
   country?: string;
+  /** @nullable */
+  countryCode?: string | null;
   educationLevel?: string;
   institutionName?: string;
+  /** @nullable */
+  institutionCountryCode?: string | null;
+  /** @nullable */
+  institutionWebsite?: string | null;
+  /** @nullable */
+  institutionDomain?: string | null;
   programMajor?: string;
+  degree?: string;
   gradeYear?: string;
   expectedCompletionDate?: string;
   onboardingCompleted?: boolean;
+  personalizationEnabled?: boolean;
+}
+
+export interface Institution {
+  name: string;
+  /** @nullable */
+  countryCode?: string | null;
+  /** @nullable */
+  website?: string | null;
+  /** @nullable */
+  domain?: string | null;
 }
 
 export interface ConversationMessage {
@@ -88,6 +153,8 @@ export interface Course {
   term?: string | null;
   /** @nullable */
   completedAt?: string | null;
+  /** True for the hardcoded example course seeded when onboarding completes. */
+  isSample: boolean;
   progress: number;
   topics: CourseTopic[];
 }
@@ -117,8 +184,18 @@ export interface CourseUpdateInput {
 export interface StudyTask {
   label: string;
   duration: string;
+  /** Review, Learn, or Quiz. */
   kind: string;
   completed: boolean;
+  courseId: string;
+  courseName: string;
+  /** @nullable */
+  topicName: string | null;
+  /**
+     * Set only for a Review task pointing at a specific completed quiz.
+     * @nullable
+     */
+  quizId: string | null;
 }
 
 export interface UpcomingEvent {
@@ -132,6 +209,8 @@ export interface UpcomingEvent {
 export interface Dashboard {
   greeting: string;
   courseName: string;
+  /** True when the course shown above is the hardcoded example seeded at onboarding. */
+  isSampleCourse: boolean;
   courseProgress: number;
   strongestTopic: string;
   focusTopic: string;
@@ -164,12 +243,54 @@ export interface TutorMessage {
 
 export interface QuizQuestion {
   id: string;
+  quizId: string;
+  courseId: string;
+  courseName: string;
   number: number;
   total: number;
+  /** This question's own topic — every question in an overall quiz can differ. */
   topic: string;
   question: string;
   options: string[];
   difficulty: string;
+}
+
+/**
+ * Same shape as QuizQuestion; every property is absent when there's no active quiz to resume.
+ */
+export interface ActiveQuiz {
+  id?: string;
+  quizId?: string;
+  courseId?: string;
+  courseName?: string;
+  number?: number;
+  total?: number;
+  topic?: string;
+  question?: string;
+  options?: string[];
+  difficulty?: string;
+}
+
+/**
+ * For an overall quiz only: "balanced" spreads questions evenly, "weak-spots" weights toward lower-mastery topics. Ignored for a topic-specific quiz.
+ */
+export type QuizStartInputFocus = typeof QuizStartInputFocus[keyof typeof QuizStartInputFocus];
+
+
+export const QuizStartInputFocus = {
+  balanced: 'balanced',
+  'weak-spots': 'weak-spots',
+} as const;
+
+export interface QuizStartInput {
+  courseId: string;
+  /**
+     * Omit or pass null for an overall quiz spanning every topic in the course.
+     * @nullable
+     */
+  topicName?: string | null;
+  /** For an overall quiz only: "balanced" spreads questions evenly, "weak-spots" weights toward lower-mastery topics. Ignored for a topic-specific quiz. */
+  focus?: QuizStartInputFocus;
 }
 
 export interface QuizAnswerInput {
@@ -181,7 +302,55 @@ export interface QuizFeedback {
   correct: boolean;
   explanation: string;
   xp: number;
-  nextTopic: string;
+  /** The topic this specific question covered. */
+  topicName: string;
+  quizCompleted: boolean;
+  /** Running total of correct answers in this quiz so far. */
+  correctCount: number;
+  totalQuestions: number;
+}
+
+export interface CompletedQuiz {
+  id: string;
+  courseId: string;
+  courseName: string;
+  /**
+     * Null for an overall (multi-topic) quiz.
+     * @nullable
+     */
+  topicName: string | null;
+  /** @nullable */
+  title: string | null;
+  totalQuestions: number;
+  correctCount: number;
+  completedAt: string;
+}
+
+export interface QuizReviewQuestion {
+  number: number;
+  question: string;
+  options: string[];
+  correctAnswer: string;
+  explanation: string;
+  /** @nullable */
+  selectedAnswer: string | null;
+  correct: boolean;
+  /** @nullable */
+  topicName: string | null;
+}
+
+export interface QuizReview {
+  id: string;
+  courseId: string;
+  courseName: string;
+  /** @nullable */
+  topicName: string | null;
+  /** @nullable */
+  title: string | null;
+  totalQuestions: number;
+  correctCount: number;
+  completedAt: string;
+  questions: QuizReviewQuestion[];
 }
 
 export interface DocumentSummary {
@@ -257,6 +426,39 @@ export interface CourseEventInput {
   description?: string;
 }
 
+export interface TopicKeyTerm {
+  term: string;
+  definition: string;
+}
+
+export interface TopicMaterialSource {
+  fileName: string;
+  chunkCount: number;
+}
+
+export interface TopicStudyMaterial {
+  topicName: string;
+  summary: string;
+  keyPoints: string[];
+  keyTerms: TopicKeyTerm[];
+  nextStep: string;
+  /** True when at least one of the student's own uploaded-document chunks contributed to this guide. */
+  groundedInMaterials: boolean;
+  sources: TopicMaterialSource[];
+  generatedAt: string;
+  /**
+     * When the student last marked this guide done. Reset to null whenever the guide is regenerated, since that's new content they haven't confirmed yet.
+     * @nullable
+     */
+  completedAt: string | null;
+}
+
+export interface CompletedStudyMaterial {
+  completedAt: string;
+  /** 0 if this topic's guide was already marked done earlier today. */
+  xpAwarded: number;
+}
+
 export interface Achievement {
   id: string;
   key: string;
@@ -278,6 +480,11 @@ courseId?: string;
 
 export type ListCoursesParams = {
 status?: string;
+};
+
+export type SearchInstitutionsParams = {
+q: string;
+countryCode?: string;
 };
 
 export type ListEventsParams = {

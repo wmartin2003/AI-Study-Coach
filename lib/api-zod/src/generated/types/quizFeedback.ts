@@ -10,5 +10,10 @@ export interface QuizFeedback {
   correct: boolean;
   explanation: string;
   xp: number;
-  nextTopic: string;
+  /** The topic this specific question covered. */
+  topicName: string;
+  quizCompleted: boolean;
+  /** Running total of correct answers in this quiz so far. */
+  correctCount: number;
+  totalQuestions: number;
 }

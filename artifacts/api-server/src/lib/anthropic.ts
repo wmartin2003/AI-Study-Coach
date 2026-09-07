@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { assertBudgetAvailable, recordUsage, type AiFeature } from "./usage";
 
 const apiKey = process.env["ANTHROPIC_API_KEY"];
 if (!apiKey) throw new Error("ANTHROPIC_API_KEY is required but was not provided.");
@@ -12,8 +13,16 @@ export const TUTOR_MODEL = "claude-sonnet-5";
 /**
  * Forces Claude to answer via a single tool call so the result is guaranteed
  * to match `inputSchema`, rather than parsing free-form text as JSON.
+ *
+ * Every caller must pass `userId`/`feature` — this function is the guard,
+ * not just the SDK wrapper: it checks the caller's budget before spending a
+ * cent, then records the real token usage from the response afterward. That
+ * ordering (check → call → record) is deliberate: never estimate cost before
+ * a call happens, and never record a call that didn't happen.
  */
 export async function generateStructured<T>(options: {
+  userId: string;
+  feature: AiFeature;
   system: string;
   prompt: string;
   toolName: string;
@@ -21,6 +30,8 @@ export async function generateStructured<T>(options: {
   inputSchema: Anthropic.Tool["input_schema"];
   maxTokens?: number;
 }): Promise<T> {
+  await assertBudgetAvailable(options.userId);
+
   const response = await anthropic.messages.create({
     model: TUTOR_MODEL,
     max_tokens: options.maxTokens ?? 2048,
@@ -34,6 +45,13 @@ export async function generateStructured<T>(options: {
       },
     ],
     tool_choice: { type: "tool", name: options.toolName },
+  });
+
+  await recordUsage({
+    userId: options.userId,
+    feature: options.feature,
+    model: TUTOR_MODEL,
+    usage: { inputTokens: response.usage.input_tokens, outputTokens: response.usage.output_tokens },
   });
 
   const toolUse = response.content.find((block) => block.type === "tool_use");

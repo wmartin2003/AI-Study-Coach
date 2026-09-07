@@ -1,6 +1,7 @@
-import { Award, BookOpen, Brain, CalendarDays, ChevronRight, LayoutDashboard, Library, ListChecks, LogOut, Menu, Plus, Sparkles, X } from "lucide-react";
+import { Award, BookOpen, Brain, CalendarDays, ChevronRight, LayoutDashboard, Library, ListChecks, LogOut, Menu, Plus, Settings, Sparkles, X } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { Link, useLocation } from "wouter";
+import { getGetProfileQueryKey, useGetProfile } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth-context";
 
 const navItems = [
@@ -14,9 +15,9 @@ const navItems = [
 export function BrandMark() {
   return (
     <div className="flex items-center gap-3" data-testid="brand-study-coach">
-      <div className="relative flex h-9 w-9 items-center justify-center rounded-[13px] bg-accent text-primary shadow-sm">
+      <div className="relative flex h-9 w-9 items-center justify-center rounded-[13px] bg-accent text-accent-foreground shadow-sm">
         <BookOpen className="h-[18px] w-[18px]" strokeWidth={2.5} />
-        <span className="absolute right-[6px] top-[6px] h-1.5 w-1.5 rounded-full bg-primary" />
+        <span className="absolute right-[6px] top-[6px] h-1.5 w-1.5 rounded-full bg-accent-foreground" />
       </div>
       <span className="font-display text-[19px] font-semibold tracking-[-0.02em]">study coach</span>
     </div>
@@ -25,10 +26,15 @@ export function BrandMark() {
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const [location] = useLocation();
-  const { user, signOut } = useAuth();
-  const displayName = (user?.user_metadata?.["full_name"] as string | undefined) || user?.email || "Student";
+  const { signOut } = useAuth();
+  // Shares its cache with every other page that calls useGetProfile(), so
+  // this never triggers an extra request beyond what's already loaded.
+  const profileQuery = useGetProfile({ query: { queryKey: getGetProfileQueryKey() } });
+  // Never fall back to the account email here — it's not meant to be
+  // displayed, and doing so was the bug this replaced.
+  const displayName = profileQuery.data?.fullName?.trim() || "Student";
   const initials = displayName
-    .split(/[\s@]+/)
+    .split(/\s+/)
     .filter(Boolean)
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase())
@@ -63,10 +69,20 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           <div className="mb-3 flex items-center gap-2 text-accent"><Sparkles className="h-3.5 w-3.5" /><span className="font-mono-ui text-[10px] uppercase tracking-[0.14em]">Small steps</span></div>
           <p className="text-[12px] leading-relaxed text-sidebar-foreground/65">A little focused practice today makes tomorrow lighter.</p>
         </div>
-        <div className="flex items-center gap-3 border-t border-sidebar-border pt-4">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-accent text-[12px] font-bold text-primary">{initials}</div>
-          <div className="min-w-0"><p className="truncate text-[13px] font-semibold">{displayName}</p><p className="truncate text-[11px] text-sidebar-foreground/45">Keep going{displayName !== "Student" ? `, ${displayName.split(" ")[0]}` : ""}</p></div>
-          <button type="button" onClick={() => void signOut()} data-testid="button-sign-out" title="Sign out" className="ml-auto rounded-lg p-1.5 text-sidebar-foreground/40 hover:bg-sidebar-accent hover:text-sidebar-foreground"><LogOut className="h-4 w-4" /></button>
+        <div className="border-t border-sidebar-border pt-4">
+          <Link href="/profile" onClick={onNavigate} data-testid="link-sidebar-profile"
+            className={`-mx-2 flex items-center gap-3 rounded-xl px-2 py-1.5 transition-colors ${location.startsWith("/profile") ? "bg-sidebar-accent" : "hover:bg-sidebar-accent/70"}`}>
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-[12px] font-bold text-accent-foreground">{initials}</div>
+            <div className="min-w-0"><p className="truncate text-[13px] font-semibold">{displayName}</p><p className="truncate text-[11px] text-sidebar-foreground/45">View profile</p></div>
+          </Link>
+          <div className="mt-2 flex items-center gap-1">
+            <Link href="/settings" onClick={onNavigate} data-testid="link-sidebar-settings" title="Settings"
+              className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-[12px] font-medium transition-colors ${location.startsWith("/settings") ? "bg-sidebar-accent text-sidebar-foreground" : "text-sidebar-foreground/55 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground"}`}>
+              <Settings className="h-4 w-4" /> Settings
+            </Link>
+            <button type="button" onClick={() => void signOut()} data-testid="button-sign-out" title="Sign out"
+              className="ml-auto rounded-lg p-1.5 text-sidebar-foreground/40 hover:bg-sidebar-accent hover:text-sidebar-foreground"><LogOut className="h-4 w-4" /></button>
+          </div>
         </div>
       </div>
     </div>

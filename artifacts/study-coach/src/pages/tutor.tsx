@@ -10,6 +10,9 @@ import {
 } from "@workspace/api-client-react";
 import type { TutorMessage } from "@workspace/api-client-react";
 import { AppShell, ErrorNotice, PageHeading } from "@/components/app-shell";
+import { TutorMarkdown } from "@/components/tutor-markdown";
+import { toast } from "@/hooks/use-toast";
+import { getApiErrorMessage, isBudgetError } from "@/lib/format";
 
 type ChatMessage = { role: string; message: string; prompt?: string };
 const GENERAL = "__general__";
@@ -59,11 +62,20 @@ export default function TutorPage() {
           setMessages((current) => [...current, reply]);
           setConversationId(reply.conversationId);
         },
-        onError: () =>
+        onError: (err) => {
+          if (isBudgetError(err)) {
+            // Don't leave an unanswered message sitting in the transcript —
+            // give the question back to the input so nothing typed is lost.
+            setMessages((current) => current.slice(0, -1));
+            setDraft(message);
+            toast({ title: "AI allowance reached", description: getApiErrorMessage(err, "Try again later."), variant: "destructive" });
+            return;
+          }
           setMessages((current) => [
             ...current,
             { role: "tutor", message: "I lost my train of thought for a moment. Try asking that again, or break it into a smaller question." },
-          ]),
+          ]);
+        },
       },
     );
   };
@@ -74,6 +86,13 @@ export default function TutorPage() {
   };
 
   const studyingLabel = selectedCourse ? `${selectedCourse.name}${topicName ? ` · ${topicName}` : ""}` : "General questions";
+  const activeTopicMastery = selectedCourse?.topics.find((topic) => topic.name === topicName)?.masteryLevel ?? null;
+  const promptSuggestions = buildPromptSuggestions({
+    hasMessages: messages.length > 0,
+    courseName: selectedCourse?.name ?? null,
+    topicName,
+    masteryLevel: activeTopicMastery,
+  });
 
   return (
     <AppShell>
@@ -138,7 +157,7 @@ export default function TutorPage() {
           <section className="flex min-h-[600px] flex-col rounded-[24px] border border-border bg-card">
             <div className="flex items-center justify-between border-b border-border px-5 py-4 sm:px-7">
               <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-accent"><Brain className="h-4 w-4" /></div>
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sidebar text-accent"><Brain className="h-4 w-4" /></div>
                 <div>
                   <p className="text-[13px] font-semibold text-primary">Study Coach</p>
                   <p className="font-mono-ui text-[10px] text-muted-foreground">Guiding, not giving away</p>
@@ -160,11 +179,11 @@ export default function TutorPage() {
               ) : (
                 messages.map((message, index) => (
                   <div key={`${message.role}-${index}`} className={`flex gap-3 ${message.role === "student" ? "justify-end" : "justify-start"}`} data-testid={`message-${message.role}-${index}`}>
-                    <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-[13px] leading-relaxed sm:max-w-[72%] ${message.role === "student" ? "rounded-br-md bg-primary text-primary-foreground" : "rounded-bl-md bg-secondary text-primary"}`}>
+                    <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-[13px] leading-relaxed sm:max-w-[80%] ${message.role === "student" ? "rounded-br-md bg-primary text-primary-foreground" : "rounded-bl-md bg-secondary text-primary"}`}>
                       {message.role !== "student" && (
                         <div className="mb-2 flex items-center gap-1.5 font-mono-ui text-[9px] uppercase tracking-[0.14em] text-primary/50"><Sparkles className="h-3 w-3" /> Coach</div>
                       )}
-                      {message.message}
+                      {message.role === "student" ? message.message : <TutorMarkdown content={message.message} />}
                     </div>
                   </div>
                 ))
@@ -204,12 +223,14 @@ export default function TutorPage() {
           </section>
           <aside className="space-y-4">
             <div className="rounded-[22px] border border-accent/30 bg-accent/15 p-5">
-              <div className="mb-3 flex items-center gap-2 text-primary"><Lightbulb className="h-4 w-4" /><p className="font-mono-ui text-[10px] uppercase tracking-[0.15em]">Try a prompt</p></div>
-              <p className="text-[12px] leading-relaxed text-muted-foreground">Start with what you know. The tutor will meet you there.</p>
+              <div className="mb-3 flex items-center gap-2 text-primary"><Lightbulb className="h-4 w-4" /><p className="font-mono-ui text-[10px] uppercase tracking-[0.15em]">{messages.length === 0 ? "Start the conversation" : "Try a follow-up"}</p></div>
+              <p className="text-[12px] leading-relaxed text-muted-foreground">
+                {messages.length === 0 ? "Not sure how to open? Pick one — it's tailored to what you're studying." : "Keep going, or steer the conversation somewhere new."}
+              </p>
               <div className="mt-4 space-y-2">
-                <PromptButton text="Can you explain this a different way?" onClick={submit} />
-                <PromptButton text="Give me a hint" onClick={submit} />
-                <PromptButton text="Quiz me on this" onClick={submit} />
+                {promptSuggestions.map((text) => (
+                  <PromptButton key={text} text={text} onClick={submit} />
+                ))}
               </div>
             </div>
             <div className="flex items-start gap-2.5 rounded-2xl px-2 py-1 text-[11px] leading-relaxed text-muted-foreground">
@@ -221,6 +242,44 @@ export default function TutorPage() {
       </div>
     </AppShell>
   );
+}
+
+/**
+ * A follow-up ("give me a hint", "explain that differently") only makes
+ * sense once there's something on screen to follow up on — with an empty
+ * chat those read as non-sequiturs. So an empty conversation gets chat
+ * *starters* instead, tailored to whatever course/topic is currently
+ * selected (and, once a topic is picked, nudged by how well the student
+ * already knows it) rather than the same three generic lines regardless of
+ * context.
+ */
+function buildPromptSuggestions(options: {
+  hasMessages: boolean;
+  courseName: string | null;
+  topicName: string;
+  masteryLevel: string | null;
+}): string[] {
+  const { hasMessages, courseName, topicName, masteryLevel } = options;
+
+  if (hasMessages) {
+    return ["Can you explain that a different way?", "Give me a hint instead of the answer", "Quiz me on what we just covered"];
+  }
+
+  if (courseName && topicName) {
+    const opener =
+      masteryLevel === "proficient" || masteryLevel === "mastered"
+        ? `Give me a challenging question on ${topicName}`
+        : masteryLevel === "learning" || masteryLevel === "developing"
+          ? `Help me get more comfortable with ${topicName}`
+          : `Can you introduce me to ${topicName}?`;
+    return [opener, `Walk me through ${topicName} step by step`, `Quiz me on ${topicName}`];
+  }
+
+  if (courseName) {
+    return [`What's the most important idea in ${courseName} right now?`, `Can you walk me through ${courseName} from the basics?`, `Quiz me on ${courseName}`];
+  }
+
+  return ["I'm stuck on something — can you help me work through it?", "Can you walk me through a concept from scratch?", "Quiz me to see what I remember"];
 }
 
 function PromptButton({ text, onClick }: { text: string; onClick: (value: string) => void }) {

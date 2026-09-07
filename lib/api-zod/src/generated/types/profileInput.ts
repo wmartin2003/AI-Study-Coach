@@ -14,10 +14,20 @@ export interface ProfileInput {
   studyMinutesPerDay?: number;
   learningStyle?: string;
   country?: string;
+  /** @nullable */
+  countryCode?: string | null;
   educationLevel?: string;
   institutionName?: string;
+  /** @nullable */
+  institutionCountryCode?: string | null;
+  /** @nullable */
+  institutionWebsite?: string | null;
+  /** @nullable */
+  institutionDomain?: string | null;
   programMajor?: string;
+  degree?: string;
   gradeYear?: string;
   expectedCompletionDate?: string;
   onboardingCompleted?: boolean;
+  personalizationEnabled?: boolean;
 }

@@ -18,6 +18,43 @@ export const HealthCheckResponse = zod.object({
 
 
 /**
+ * @summary Create a new account, with an invite code only when SIGNUP_REQUIRE_INVITE is set (public — no auth required)
+ */
+export const SignupBody = zod.object({
+  "email": zod.string(),
+  "password": zod.string(),
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "inviteCode": zod.string().optional().describe('Required only when GET \/signup\/config reports requiresInviteCode: true; ignored otherwise.')
+})
+
+export const SignupResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+/**
+ * @summary Whether signup is currently open and whether it requires an invite code (public — no auth required)
+ */
+export const GetSignupConfigResponse = zod.object({
+  "open": zod.boolean().describe('False once the account cap (MAX_ACCOUNTS) is reached.'),
+  "requiresInviteCode": zod.boolean().describe('Mirrors the server\'s SIGNUP_REQUIRE_INVITE env var.')
+})
+
+
+/**
+ * @summary Join the closed-beta waitlist (public — no auth required)
+ */
+export const JoinWaitlistBody = zod.object({
+  "email": zod.string()
+})
+
+export const JoinWaitlistResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+/**
  * @summary Get the signed-in student's profile
  */
 export const GetProfileResponse = zod.object({
@@ -29,12 +66,18 @@ export const GetProfileResponse = zod.object({
   "studyMinutesPerDay": zod.number().nullish(),
   "learningStyle": zod.string().nullish(),
   "country": zod.string().nullish(),
+  "countryCode": zod.string().nullish().describe('ISO 3166-1 alpha-2 code, set only via the country picker.'),
   "educationLevel": zod.string().nullish(),
   "institutionName": zod.string().nullish(),
+  "institutionCountryCode": zod.string().nullish(),
+  "institutionWebsite": zod.string().nullish().describe('Official site URL — present only when the institution was selected from a lookup result, i.e. verified rather than freely typed.'),
+  "institutionDomain": zod.string().nullish(),
   "programMajor": zod.string().nullish(),
+  "degree": zod.string().nullish(),
   "gradeYear": zod.string().nullish(),
   "expectedCompletionDate": zod.string().nullish(),
-  "onboardingCompleted": zod.boolean()
+  "onboardingCompleted": zod.boolean(),
+  "personalizationEnabled": zod.boolean().optional()
 })
 
 
@@ -49,12 +92,18 @@ export const UpdateProfileBody = zod.object({
   "studyMinutesPerDay": zod.number().optional(),
   "learningStyle": zod.string().optional(),
   "country": zod.string().optional(),
+  "countryCode": zod.string().nullish(),
   "educationLevel": zod.string().optional(),
   "institutionName": zod.string().optional(),
+  "institutionCountryCode": zod.string().nullish(),
+  "institutionWebsite": zod.string().nullish(),
+  "institutionDomain": zod.string().nullish(),
   "programMajor": zod.string().optional(),
+  "degree": zod.string().optional(),
   "gradeYear": zod.string().optional(),
   "expectedCompletionDate": zod.string().optional(),
-  "onboardingCompleted": zod.boolean().optional()
+  "onboardingCompleted": zod.boolean().optional(),
+  "personalizationEnabled": zod.boolean().optional()
 })
 
 export const UpdateProfileResponse = zod.object({
@@ -66,13 +115,25 @@ export const UpdateProfileResponse = zod.object({
   "studyMinutesPerDay": zod.number().nullish(),
   "learningStyle": zod.string().nullish(),
   "country": zod.string().nullish(),
+  "countryCode": zod.string().nullish().describe('ISO 3166-1 alpha-2 code, set only via the country picker.'),
   "educationLevel": zod.string().nullish(),
   "institutionName": zod.string().nullish(),
+  "institutionCountryCode": zod.string().nullish(),
+  "institutionWebsite": zod.string().nullish().describe('Official site URL — present only when the institution was selected from a lookup result, i.e. verified rather than freely typed.'),
+  "institutionDomain": zod.string().nullish(),
   "programMajor": zod.string().nullish(),
+  "degree": zod.string().nullish(),
   "gradeYear": zod.string().nullish(),
   "expectedCompletionDate": zod.string().nullish(),
-  "onboardingCompleted": zod.boolean()
+  "onboardingCompleted": zod.boolean(),
+  "personalizationEnabled": zod.boolean().optional()
 })
+
+
+/**
+ * @summary Permanently delete the signed-in student's account and all associated data
+ */
+export const DeleteAccountResponse = zod.void()
 
 
 /**
@@ -97,6 +158,7 @@ export const GetTutorConversationResponse = zod.object({
 export const GetDashboardResponse = zod.object({
   "greeting": zod.string(),
   "courseName": zod.string(),
+  "isSampleCourse": zod.boolean().describe('True when the course shown above is the hardcoded example seeded at onboarding.'),
   "courseProgress": zod.number(),
   "strongestTopic": zod.string(),
   "focusTopic": zod.string(),
@@ -104,8 +166,12 @@ export const GetDashboardResponse = zod.object({
   "tasks": zod.array(zod.object({
   "label": zod.string(),
   "duration": zod.string(),
-  "kind": zod.string(),
-  "completed": zod.boolean()
+  "kind": zod.string().describe('Review, Learn, or Quiz.'),
+  "completed": zod.boolean(),
+  "courseId": zod.string(),
+  "courseName": zod.string(),
+  "topicName": zod.string().nullable(),
+  "quizId": zod.string().nullable().describe('Set only for a Review task pointing at a specific completed quiz.')
 })),
   "xp": zod.number(),
   "streak": zod.number(),
@@ -139,6 +205,7 @@ export const ListCoursesResponseItem = zod.object({
   "instructor": zod.string().nullish(),
   "term": zod.string().nullish(),
   "completedAt": zod.string().nullish(),
+  "isSample": zod.boolean().describe('True for the hardcoded example course seeded when onboarding completes.'),
   "progress": zod.number(),
   "topics": zod.array(zod.object({
   "name": zod.string(),
@@ -176,6 +243,7 @@ export const CreateCourseResponse = zod.object({
   "instructor": zod.string().nullish(),
   "term": zod.string().nullish(),
   "completedAt": zod.string().nullish(),
+  "isSample": zod.boolean().describe('True for the hardcoded example course seeded when onboarding completes.'),
   "progress": zod.number(),
   "topics": zod.array(zod.object({
   "name": zod.string(),
@@ -216,6 +284,7 @@ export const UpdateCourseResponse = zod.object({
   "instructor": zod.string().nullish(),
   "term": zod.string().nullish(),
   "completedAt": zod.string().nullish(),
+  "isSample": zod.boolean().describe('True for the hardcoded example course seeded when onboarding completes.'),
   "progress": zod.number(),
   "topics": zod.array(zod.object({
   "name": zod.string(),
@@ -243,6 +312,7 @@ export const CompleteCourseResponse = zod.object({
   "instructor": zod.string().nullish(),
   "term": zod.string().nullish(),
   "completedAt": zod.string().nullish(),
+  "isSample": zod.boolean().describe('True for the hardcoded example course seeded when onboarding completes.'),
   "progress": zod.number(),
   "topics": zod.array(zod.object({
   "name": zod.string(),
@@ -270,6 +340,7 @@ export const ArchiveCourseResponse = zod.object({
   "instructor": zod.string().nullish(),
   "term": zod.string().nullish(),
   "completedAt": zod.string().nullish(),
+  "isSample": zod.boolean().describe('True for the hardcoded example course seeded when onboarding completes.'),
   "progress": zod.number(),
   "topics": zod.array(zod.object({
   "name": zod.string(),
@@ -297,6 +368,7 @@ export const ReactivateCourseResponse = zod.object({
   "instructor": zod.string().nullish(),
   "term": zod.string().nullish(),
   "completedAt": zod.string().nullish(),
+  "isSample": zod.boolean().describe('True for the hardcoded example course seeded when onboarding completes.'),
   "progress": zod.number(),
   "topics": zod.array(zod.object({
   "name": zod.string(),
@@ -426,6 +498,91 @@ export const ConfirmExtractionResponse = zod.object({
 
 
 /**
+ * @summary Get the AI study guide for a topic, generating or refreshing it if stale
+ */
+export const GetTopicStudyMaterialParams = zod.object({
+  "courseId": zod.coerce.string(),
+  "topicName": zod.coerce.string()
+})
+
+export const GetTopicStudyMaterialResponse = zod.object({
+  "topicName": zod.string(),
+  "summary": zod.string(),
+  "keyPoints": zod.array(zod.string()),
+  "keyTerms": zod.array(zod.object({
+  "term": zod.string(),
+  "definition": zod.string()
+})),
+  "nextStep": zod.string(),
+  "groundedInMaterials": zod.boolean().describe('True when at least one of the student\'s own uploaded-document chunks contributed to this guide.'),
+  "sources": zod.array(zod.object({
+  "fileName": zod.string(),
+  "chunkCount": zod.number()
+})),
+  "generatedAt": zod.string(),
+  "completedAt": zod.string().nullable().describe('When the student last marked this guide done. Reset to null whenever the guide is regenerated, since that\'s new content they haven\'t confirmed yet.')
+})
+
+
+/**
+ * @summary Force-regenerate a topic's study guide even if the cached one is still fresh
+ */
+export const RegenerateTopicStudyMaterialParams = zod.object({
+  "courseId": zod.coerce.string(),
+  "topicName": zod.coerce.string()
+})
+
+export const RegenerateTopicStudyMaterialResponse = zod.object({
+  "topicName": zod.string(),
+  "summary": zod.string(),
+  "keyPoints": zod.array(zod.string()),
+  "keyTerms": zod.array(zod.object({
+  "term": zod.string(),
+  "definition": zod.string()
+})),
+  "nextStep": zod.string(),
+  "groundedInMaterials": zod.boolean().describe('True when at least one of the student\'s own uploaded-document chunks contributed to this guide.'),
+  "sources": zod.array(zod.object({
+  "fileName": zod.string(),
+  "chunkCount": zod.number()
+})),
+  "generatedAt": zod.string(),
+  "completedAt": zod.string().nullable().describe('When the student last marked this guide done. Reset to null whenever the guide is regenerated, since that\'s new content they haven\'t confirmed yet.')
+})
+
+
+/**
+ * @summary Mark a topic's study guide as done, awarding XP the first time today
+ */
+export const CompleteTopicStudyMaterialParams = zod.object({
+  "courseId": zod.coerce.string(),
+  "topicName": zod.coerce.string()
+})
+
+export const CompleteTopicStudyMaterialResponse = zod.object({
+  "completedAt": zod.string(),
+  "xpAwarded": zod.number().describe('0 if this topic\'s guide was already marked done earlier today.')
+})
+
+
+/**
+ * @summary Search a public university/school dataset by name
+ */
+export const SearchInstitutionsQueryParams = zod.object({
+  "q": zod.coerce.string(),
+  "countryCode": zod.coerce.string().optional()
+})
+
+export const SearchInstitutionsResponseItem = zod.object({
+  "name": zod.string(),
+  "countryCode": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "domain": zod.string().nullish()
+})
+export const SearchInstitutionsResponse = zod.array(SearchInstitutionsResponseItem)
+
+
+/**
  * @summary List upcoming course events, optionally scoped to one course
  */
 export const ListEventsQueryParams = zod.object({
@@ -551,13 +708,39 @@ export const SendTutorMessageResponse = zod.object({
 
 
 /**
- * @summary Get the current adaptive quiz
+ * @summary Get the student's in-progress quiz (if any), so it can be resumed
  */
-export const GetQuizResponse = zod.object({
+export const GetActiveQuizResponse = zod.object({
+  "id": zod.string().optional(),
+  "quizId": zod.string().optional(),
+  "courseId": zod.string().optional(),
+  "courseName": zod.string().optional(),
+  "number": zod.number().optional(),
+  "total": zod.number().optional(),
+  "topic": zod.string().optional(),
+  "question": zod.string().optional(),
+  "options": zod.array(zod.string()).optional(),
+  "difficulty": zod.string().optional()
+}).describe('Same shape as QuizQuestion; every property is absent when there\'s no active quiz to resume.')
+
+
+/**
+ * @summary Start a new quiz for a course — one topic, or an overall mix across topics
+ */
+export const StartQuizBody = zod.object({
+  "courseId": zod.string(),
+  "topicName": zod.string().nullish().describe('Omit or pass null for an overall quiz spanning every topic in the course.'),
+  "focus": zod.enum(['balanced', 'weak-spots']).optional().describe('For an overall quiz only: \"balanced\" spreads questions evenly, \"weak-spots\" weights toward lower-mastery topics. Ignored for a topic-specific quiz.')
+})
+
+export const StartQuizResponse = zod.object({
   "id": zod.string(),
+  "quizId": zod.string(),
+  "courseId": zod.string(),
+  "courseName": zod.string(),
   "number": zod.number(),
   "total": zod.number(),
-  "topic": zod.string(),
+  "topic": zod.string().describe('This question\'s own topic — every question in an overall quiz can differ.'),
   "question": zod.string(),
   "options": zod.array(zod.string()),
   "difficulty": zod.string()
@@ -576,7 +759,59 @@ export const SubmitQuizAnswerResponse = zod.object({
   "correct": zod.boolean(),
   "explanation": zod.string(),
   "xp": zod.number(),
-  "nextTopic": zod.string()
+  "topicName": zod.string().describe('The topic this specific question covered.'),
+  "quizCompleted": zod.boolean(),
+  "correctCount": zod.number().describe('Running total of correct answers in this quiz so far.'),
+  "totalQuestions": zod.number()
+})
+
+
+/**
+ * @summary List a course's completed quizzes, for review
+ */
+export const ListCourseQuizzesParams = zod.object({
+  "courseId": zod.coerce.string()
+})
+
+export const ListCourseQuizzesResponseItem = zod.object({
+  "id": zod.string(),
+  "courseId": zod.string(),
+  "courseName": zod.string(),
+  "topicName": zod.string().nullable().describe('Null for an overall (multi-topic) quiz.'),
+  "title": zod.string().nullable(),
+  "totalQuestions": zod.number(),
+  "correctCount": zod.number(),
+  "completedAt": zod.string()
+})
+export const ListCourseQuizzesResponse = zod.array(ListCourseQuizzesResponseItem)
+
+
+/**
+ * @summary Get the full question-by-question review for one completed quiz
+ */
+export const GetQuizReviewParams = zod.object({
+  "quizId": zod.coerce.string()
+})
+
+export const GetQuizReviewResponse = zod.object({
+  "id": zod.string(),
+  "courseId": zod.string(),
+  "courseName": zod.string(),
+  "topicName": zod.string().nullable(),
+  "title": zod.string().nullable(),
+  "totalQuestions": zod.number(),
+  "correctCount": zod.number(),
+  "completedAt": zod.string(),
+  "questions": zod.array(zod.object({
+  "number": zod.number(),
+  "question": zod.string(),
+  "options": zod.array(zod.string()),
+  "correctAnswer": zod.string(),
+  "explanation": zod.string(),
+  "selectedAnswer": zod.string().nullable(),
+  "correct": zod.boolean(),
+  "topicName": zod.string().nullable()
+}))
 })
 
 

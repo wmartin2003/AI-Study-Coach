@@ -26,6 +26,54 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /signup:
+    post:
+      operationId: signup
+      tags: [study]
+      summary: Create a new account, with an invite code only when SIGNUP_REQUIRE_INVITE is set (public — no auth required)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignupInput"
+      responses:
+        "201":
+          description: Account created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountCreated"
+  /signup/config:
+    get:
+      operationId: getSignupConfig
+      tags: [study]
+      summary: Whether signup is currently open and whether it requires an invite code (public — no auth required)
+      responses:
+        "200":
+          description: Signup configuration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SignupConfig"
+  /waitlist:
+    post:
+      operationId: joinWaitlist
+      tags: [study]
+      summary: Join the closed-beta waitlist (public — no auth required)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WaitlistInput"
+      responses:
+        "201":
+          description: Added to the waitlist
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WaitlistJoined"
   /profile:
     get:
       operationId: getProfile
@@ -55,6 +103,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Profile"
+  /account:
+    delete:
+      operationId: deleteAccount
+      tags: [study]
+      summary: Permanently delete the signed-in student's account and all associated data
+      responses:
+        "204":
+          description: Account deleted
   /tutor/conversation:
     get:
       operationId: getTutorConversation
@@ -305,6 +361,92 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ExtractionApplyResult"
+  /courses/{courseId}/topics/{topicName}/study-material:
+    get:
+      operationId: getTopicStudyMaterial
+      tags: [study]
+      summary: Get the AI study guide for a topic, generating or refreshing it if stale
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: topicName
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Study guide
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TopicStudyMaterial"
+  /courses/{courseId}/topics/{topicName}/study-material/regenerate:
+    post:
+      operationId: regenerateTopicStudyMaterial
+      tags: [study]
+      summary: Force-regenerate a topic's study guide even if the cached one is still fresh
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: topicName
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Study guide
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TopicStudyMaterial"
+  /courses/{courseId}/topics/{topicName}/study-material/complete:
+    post:
+      operationId: completeTopicStudyMaterial
+      tags: [study]
+      summary: Mark a topic's study guide as done, awarding XP the first time today
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: topicName
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Completion result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompletedStudyMaterial"
+  /institutions/search:
+    get:
+      operationId: searchInstitutions
+      tags: [study]
+      summary: Search a public university/school dataset by name
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema: { type: string }
+        - name: countryCode
+          in: query
+          required: false
+          schema: { type: string }
+      responses:
+        "200":
+          description: Matching institutions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Institution"
   /events:
     get:
       operationId: listEvents
@@ -408,14 +550,32 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TutorMessage"
-  /quiz:
+  /quiz/active:
     get:
-      operationId: getQuiz
+      operationId: getActiveQuiz
       tags: [study]
-      summary: Get the current adaptive quiz
+      summary: Get the student's in-progress quiz (if any), so it can be resumed
       responses:
         "200":
-          description: Quiz question
+          description: The active quiz's next question, or an empty object when there isn't one
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActiveQuiz"
+  /quiz/start:
+    post:
+      operationId: startQuiz
+      tags: [study]
+      summary: Start a new quiz for a course — one topic, or an overall mix across topics
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QuizStartInput"
+      responses:
+        "200":
+          description: The new quiz's first question
           content:
             application/json:
               schema:
@@ -438,6 +598,42 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/QuizFeedback"
+  /courses/{courseId}/quizzes:
+    get:
+      operationId: listCourseQuizzes
+      tags: [study]
+      summary: List a course's completed quizzes, for review
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Completed quizzes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CompletedQuiz"
+  /quiz/{quizId}/review:
+    get:
+      operationId: getQuizReview
+      tags: [study]
+      summary: Get the full question-by-question review for one completed quiz
+      parameters:
+        - name: quizId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Quiz review
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuizReview"
 components:
   schemas:
     HealthStatus:
@@ -447,6 +643,36 @@ components:
           type: string
       required:
         - status
+    SignupInput:
+      type: object
+      required: [email, password, firstName, lastName]
+      properties:
+        email: { type: string }
+        password: { type: string }
+        firstName: { type: string }
+        lastName: { type: string }
+        inviteCode: { type: string, description: "Required only when GET /signup/config reports requiresInviteCode: true; ignored otherwise." }
+    SignupConfig:
+      type: object
+      required: [open, requiresInviteCode]
+      properties:
+        open: { type: boolean, description: "False once the account cap (MAX_ACCOUNTS) is reached." }
+        requiresInviteCode: { type: boolean, description: "Mirrors the server's SIGNUP_REQUIRE_INVITE env var." }
+    AccountCreated:
+      type: object
+      required: [ok]
+      properties:
+        ok: { type: boolean }
+    WaitlistInput:
+      type: object
+      required: [email]
+      properties:
+        email: { type: string }
+    WaitlistJoined:
+      type: object
+      required: [ok]
+      properties:
+        ok: { type: boolean }
     Profile:
       type: object
       required: [id, fullName, onboardingCompleted]
@@ -459,12 +685,18 @@ components:
         studyMinutesPerDay: { type: ["number", "null"] }
         learningStyle: { type: ["string", "null"] }
         country: { type: ["string", "null"] }
+        countryCode: { type: ["string", "null"], description: "ISO 3166-1 alpha-2 code, set only via the country picker." }
         educationLevel: { type: ["string", "null"] }
         institutionName: { type: ["string", "null"] }
+        institutionCountryCode: { type: ["string", "null"] }
+        institutionWebsite: { type: ["string", "null"], description: "Official site URL — present only when the institution was selected from a lookup result, i.e. verified rather than freely typed." }
+        institutionDomain: { type: ["string", "null"] }
         programMajor: { type: ["string", "null"] }
+        degree: { type: ["string", "null"] }
         gradeYear: { type: ["string", "null"] }
         expectedCompletionDate: { type: ["string", "null"] }
         onboardingCompleted: { type: boolean }
+        personalizationEnabled: { type: boolean }
     ProfileInput:
       type: object
       properties:
@@ -475,12 +707,26 @@ components:
         studyMinutesPerDay: { type: number }
         learningStyle: { type: string }
         country: { type: string }
+        countryCode: { type: ["string", "null"] }
         educationLevel: { type: string }
         institutionName: { type: string }
+        institutionCountryCode: { type: ["string", "null"] }
+        institutionWebsite: { type: ["string", "null"] }
+        institutionDomain: { type: ["string", "null"] }
         programMajor: { type: string }
+        degree: { type: string }
         gradeYear: { type: string }
         expectedCompletionDate: { type: string }
         onboardingCompleted: { type: boolean }
+        personalizationEnabled: { type: boolean }
+    Institution:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+        countryCode: { type: ["string", "null"] }
+        website: { type: ["string", "null"] }
+        domain: { type: ["string", "null"] }
     ConversationMessage:
       type: object
       required: [role, message]
@@ -504,7 +750,7 @@ components:
         masteryScore: { type: number }
     Course:
       type: object
-      required: [id, name, completionDate, level, status, progress, topics]
+      required: [id, name, completionDate, level, status, isSample, progress, topics]
       properties:
         id: { type: string }
         name: { type: string }
@@ -516,6 +762,7 @@ components:
         instructor: { type: ["string", "null"] }
         term: { type: ["string", "null"] }
         completedAt: { type: ["string", "null"] }
+        isSample: { type: boolean, description: "True for the hardcoded example course seeded when onboarding completes." }
         progress: { type: number }
         topics:
           type: array
@@ -543,12 +790,16 @@ components:
         term: { type: string }
     StudyTask:
       type: object
-      required: [label, duration, kind, completed]
+      required: [label, duration, kind, completed, courseId, courseName, topicName, quizId]
       properties:
         label: { type: string }
         duration: { type: string }
-        kind: { type: string }
+        kind: { type: string, description: "Review, Learn, or Quiz." }
         completed: { type: boolean }
+        courseId: { type: string }
+        courseName: { type: string }
+        topicName: { type: ["string", "null"] }
+        quizId: { type: ["string", "null"], description: "Set only for a Review task pointing at a specific completed quiz." }
     UpcomingEvent:
       type: object
       required: [id, courseName, type, title, eventDate]
@@ -560,10 +811,11 @@ components:
         eventDate: { type: string }
     Dashboard:
       type: object
-      required: [greeting, courseName, courseProgress, strongestTopic, focusTopic, focusReason, tasks, xp, streak, questionsThisWeek, masteredTopics, upcomingEvents]
+      required: [greeting, courseName, isSampleCourse, courseProgress, strongestTopic, focusTopic, focusReason, tasks, xp, streak, questionsThisWeek, masteredTopics, upcomingEvents]
       properties:
         greeting: { type: string }
         courseName: { type: string }
+        isSampleCourse: { type: boolean, description: "True when the course shown above is the hardcoded example seeded at onboarding." }
         courseProgress: { type: number }
         strongestTopic: { type: string }
         focusTopic: { type: string }
@@ -596,9 +848,28 @@ components:
         conversationId: { type: string }
     QuizQuestion:
       type: object
-      required: [id, number, total, topic, question, options, difficulty]
+      required: [id, quizId, courseId, courseName, number, total, topic, question, options, difficulty]
       properties:
         id: { type: string }
+        quizId: { type: string }
+        courseId: { type: string }
+        courseName: { type: string }
+        number: { type: number }
+        total: { type: number }
+        topic: { type: string, description: "This question's own topic — every question in an overall quiz can differ." }
+        question: { type: string }
+        options:
+          type: array
+          items: { type: string }
+        difficulty: { type: string }
+    ActiveQuiz:
+      type: object
+      description: Same shape as QuizQuestion; every property is absent when there's no active quiz to resume.
+      properties:
+        id: { type: string }
+        quizId: { type: string }
+        courseId: { type: string }
+        courseName: { type: string }
         number: { type: number }
         total: { type: number }
         topic: { type: string }
@@ -607,6 +878,18 @@ components:
           type: array
           items: { type: string }
         difficulty: { type: string }
+    QuizStartInput:
+      type: object
+      required: [courseId]
+      properties:
+        courseId: { type: string }
+        topicName:
+          type: ["string", "null"]
+          description: Omit or pass null for an overall quiz spanning every topic in the course.
+        focus:
+          type: string
+          description: "For an overall quiz only: \"balanced\" spreads questions evenly, \"weak-spots\" weights toward lower-mastery topics. Ignored for a topic-specific quiz."
+          enum: [balanced, weak-spots]
     QuizAnswerInput:
       type: object
       required: [questionId, answer]
@@ -615,12 +898,56 @@ components:
         answer: { type: string }
     QuizFeedback:
       type: object
-      required: [correct, explanation, xp, nextTopic]
+      required: [correct, explanation, xp, topicName, quizCompleted, correctCount, totalQuestions]
       properties:
         correct: { type: boolean }
         explanation: { type: string }
         xp: { type: number }
-        nextTopic: { type: string }
+        topicName: { type: string, description: "The topic this specific question covered." }
+        quizCompleted: { type: boolean }
+        correctCount: { type: number, description: "Running total of correct answers in this quiz so far." }
+        totalQuestions: { type: number }
+    CompletedQuiz:
+      type: object
+      required: [id, courseId, courseName, topicName, title, totalQuestions, correctCount, completedAt]
+      properties:
+        id: { type: string }
+        courseId: { type: string }
+        courseName: { type: string }
+        topicName: { type: ["string", "null"], description: "Null for an overall (multi-topic) quiz." }
+        title: { type: ["string", "null"] }
+        totalQuestions: { type: number }
+        correctCount: { type: number }
+        completedAt: { type: string }
+    QuizReviewQuestion:
+      type: object
+      required: [number, question, options, correctAnswer, explanation, selectedAnswer, correct, topicName]
+      properties:
+        number: { type: number }
+        question: { type: string }
+        options:
+          type: array
+          items: { type: string }
+        correctAnswer: { type: string }
+        explanation: { type: string }
+        selectedAnswer: { type: ["string", "null"] }
+        correct: { type: boolean }
+        topicName: { type: ["string", "null"] }
+    QuizReview:
+      type: object
+      required: [id, courseId, courseName, topicName, title, totalQuestions, correctCount, completedAt, questions]
+      properties:
+        id: { type: string }
+        courseId: { type: string }
+        courseName: { type: string }
+        topicName: { type: ["string", "null"] }
+        title: { type: ["string", "null"] }
+        totalQuestions: { type: number }
+        correctCount: { type: number }
+        completedAt: { type: string }
+        questions:
+          type: array
+          items: { $ref: "#/components/schemas/QuizReviewQuestion" }
     DocumentSummary:
       type: object
       required: [id, fileName, documentType, status, createdAt]
@@ -697,6 +1024,47 @@ components:
         title: { type: string, minLength: 1 }
         eventDate: { type: string, minLength: 1 }
         description: { type: string }
+    TopicKeyTerm:
+      type: object
+      required: [term, definition]
+      properties:
+        term: { type: string }
+        definition: { type: string }
+    TopicMaterialSource:
+      type: object
+      required: [fileName, chunkCount]
+      properties:
+        fileName: { type: string }
+        chunkCount: { type: number }
+    TopicStudyMaterial:
+      type: object
+      required: [topicName, summary, keyPoints, keyTerms, nextStep, groundedInMaterials, sources, generatedAt, completedAt]
+      properties:
+        topicName: { type: string }
+        summary: { type: string }
+        keyPoints:
+          type: array
+          items: { type: string }
+        keyTerms:
+          type: array
+          items: { $ref: "#/components/schemas/TopicKeyTerm" }
+        nextStep: { type: string }
+        groundedInMaterials:
+          type: boolean
+          description: True when at least one of the student's own uploaded-document chunks contributed to this guide.
+        sources:
+          type: array
+          items: { $ref: "#/components/schemas/TopicMaterialSource" }
+        generatedAt: { type: string }
+        completedAt:
+          type: ["string", "null"]
+          description: When the student last marked this guide done. Reset to null whenever the guide is regenerated, since that's new content they haven't confirmed yet.
+    CompletedStudyMaterial:
+      type: object
+      required: [completedAt, xpAwarded]
+      properties:
+        completedAt: { type: string }
+        xpAwarded: { type: number, description: "0 if this topic's guide was already marked done earlier today." }
     Achievement:
       type: object
       required: [id, key, title, description, courseName, courseCode, earnedAt]

@@ -23,13 +23,11 @@ This project was originally scaffolded on Replit but runs entirely on standard t
 ## 1. Set up Supabase
 
 1. Create a new project at [supabase.com/dashboard](https://supabase.com/dashboard).
-2. Apply the schema by running the SQL files in `supabase/migrations/` **in order** against your project — either paste each file's contents into the Supabase SQL Editor, or run them with `psql`:
+2. Apply the schema by running every SQL file in `supabase/migrations/` **in order** against your project — either paste each file's contents into the Supabase SQL Editor one at a time, or run them all with `psql`:
    ```bash
-   psql "$SUPABASE_DB_URL" -f supabase/migrations/0001_init.sql
-   psql "$SUPABASE_DB_URL" -f supabase/migrations/0002_profiles_courses_events_badges.sql
-   psql "$SUPABASE_DB_URL" -f supabase/migrations/0003_trigger_first_last_name.sql
+   for f in supabase/migrations/*.sql; do psql "$SUPABASE_DB_URL" -f "$f" || break; done
    ```
-   This creates every table, enables Row Level Security on all of them, sets up the storage buckets used for uploaded documents, and installs the trigger that provisions a profile row on signup.
+   This creates every table, enables Row Level Security on all of them, sets up the storage buckets used for uploaded documents, installs the trigger that provisions a profile row on signup, and locks down the invite-code functions to the service role. Every file is written to be safe to re-run, so the same command is what you run to apply new migrations later too (locally or against production — see "Deployment" below).
 3. From your project's **Settings → API** page, collect the values you'll need below: the project URL, the publishable (anon) key, and the secret (service role) key.
 4. From **Settings → Database**, collect the connection string for `SUPABASE_DB_URL` (used for running migrations and any admin scripts — never used by the running app itself).
 
@@ -53,10 +51,30 @@ cp artifacts/study-coach/.env.example artifacts/study-coach/.env
 | `SUPABASE_DB_URL` | Supabase → Settings → Database (used for running migrations, not by the app at runtime) |
 | `VITE_SUPABASE_URL` | Same as `SUPABASE_URL` |
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | Same as `SUPABASE_PUBLISHABLE_KEY` |
+| `ALLOWED_ORIGINS` | Comma-separated list of origins allowed to call the API in production (e.g. `https://app.example.com`). Falls back to `localhost` in development. |
+| `USER_MONTHLY_BUDGET_USD` | Optional. Default per-user monthly AI spend cap in USD (default **$1.00** if unset); a student's `profiles.monthly_budget_usd`, when set, overrides this for that student. |
+| `SIGNUP_REQUIRE_INVITE` | Optional, default `false`. See "Spend and signup caps" below. |
+| `MAX_ACCOUNTS` | Optional, default `40`. See "Spend and signup caps" below. |
 
 `artifacts/study-coach/.env` only needs the two `VITE_*` values (Vite only exposes env vars prefixed `VITE_` to the frontend bundle — this is what keeps the secret key out of the browser).
 
 Never commit `.env` files — they're already gitignored.
+
+### Spend and signup caps
+
+Three independent ceilings, checked in this order on every AI call and on every signup:
+
+1. **`ai_service_state.monthly_budget_usd`** (default **$35/month**, a database row, not an env var) — a global kill switch. Once this month's total spend across every student reaches it, every AI call in the app returns 503 until next month (or until you raise it). Change it directly in Supabase (`update ai_service_state set monthly_budget_usd = 50 where id = 1;`) or flip `ai_service_state.paused = true` to stop AI calls immediately regardless of spend.
+2. **`USER_MONTHLY_BUDGET_USD`** (default **$1.00/month**, env var) — the default per-student cap. A student who hits it gets a 429 with a clear message; everything else in the app keeps working.
+3. **`MAX_ACCOUNTS`** (default **40**, env var) — a hard ceiling on total accounts. `POST /api/signup` returns 503 once `profiles` has this many rows.
+
+**To raise a specific student's cap** (e.g. they're doing something that legitimately needs more room), set it on their profile row rather than raising the global default:
+
+```sql
+update profiles set monthly_budget_usd = 5 where id = '<their user id>';
+```
+
+**To open or close signup entirely**, set `SIGNUP_REQUIRE_INVITE=true` on the API host and redeploy — invite codes (`pnpm --filter @workspace/scripts run invites -- generate`) become required again immediately, with no code changes. The `invite_codes` table and redemption path are always intact; this env var is the only thing that decides whether they're enforced.
 
 ## 3. Install dependencies
 
@@ -90,6 +108,37 @@ PORT=5174 BASE_PATH=/ pnpm run build   # typecheck + build every package
 ```
 
 This produces `artifacts/api-server/dist/index.mjs` (run with `node artifacts/api-server/dist/index.mjs`, with `PORT` and the `.env` variables set in the environment) and `artifacts/study-coach/dist/public/` (a static asset bundle — serve it with any static file host, with SPA fallback routing to `index.html` so client-side routes like `/course` or `/tutor` work on a hard refresh).
+
+## Deployment
+
+The frontend and API are deployed as two separate hosts, fed from this GitHub repo:
+
+- **Frontend → Vercel**, building `artifacts/study-coach` per `vercel.json` at the repo root. `vercel.json`'s `rewrites` proxies `/api/*` to the API host and serves everything else via the SPA fallback — this keeps the frontend and API same-origin from the browser's point of view, so no CORS and no client code needs to know the API's real URL. **Before your first deploy**, replace the placeholder host in `vercel.json`'s first rewrite (`REPLACE_WITH_YOUR_API_HOST`) with your actual Render URL.
+- **API → Render**, per `render.yaml` at the repo root (a Render "Blueprint" — see [render.com/docs/blueprint-spec](https://render.com/docs/blueprint-spec)). Connect the repo in the Render dashboard and it reads this file automatically. Env vars marked `sync: false` in `render.yaml` aren't in the file — Render prompts for them in its dashboard the first time you deploy.
+
+**Which host needs which variable:**
+
+| Variable | Vercel (frontend) | Render (API) |
+|---|---|---|
+| `VITE_SUPABASE_URL` | ✅ | — |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | ✅ | — |
+| `ANTHROPIC_API_KEY` | — | ✅ |
+| `SUPABASE_URL` | — | ✅ |
+| `SUPABASE_PUBLISHABLE_KEY` | — | ✅ |
+| `SUPABASE_SECRET_KEY` | — | ✅ |
+| `ALLOWED_ORIGINS` | — | ✅ (set to your Vercel URL) |
+| `NODE_ENV` | — | ✅ (`production`) |
+| `USER_MONTHLY_BUDGET_USD`, `SIGNUP_REQUIRE_INVITE`, `MAX_ACCOUNTS` | — | ✅ (all have safe defaults baked into `render.yaml`) |
+| `SUPABASE_DB_URL` | — | — (only ever used to run migrations from your own machine, never by either deployed host) |
+
+**Running migrations against production**: same command as local setup, pointed at your production `SUPABASE_DB_URL` (Supabase → Settings → Database) instead of a dev project:
+```bash
+SUPABASE_DB_URL="<production connection string>" \
+  bash -c 'for f in supabase/migrations/*.sql; do psql "$SUPABASE_DB_URL" -f "$f" || break; done'
+```
+Run this from your own machine before or after a deploy that adds a new migration file — neither host runs migrations automatically.
+
+**Flipping the signup/spend caps in production** — no code changes for any of these, only a redeploy (env vars) or a direct SQL statement (the database ones): see "Spend and signup caps" above for exactly what each one does and how to change it. In short: `SIGNUP_REQUIRE_INVITE` and `MAX_ACCOUNTS` are Render env vars (edit in `render.yaml` or the Render dashboard, then redeploy); `ai_service_state.monthly_budget_usd` and a specific student's `profiles.monthly_budget_usd` are database rows you update directly in Supabase.
 
 ## Where things live
 

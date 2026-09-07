@@ -22,15 +22,32 @@ export interface Profile {
   learningStyle?: string | null;
   /** @nullable */
   country?: string | null;
+  /**
+     * ISO 3166-1 alpha-2 code, set only via the country picker.
+     * @nullable
+     */
+  countryCode?: string | null;
   /** @nullable */
   educationLevel?: string | null;
   /** @nullable */
   institutionName?: string | null;
   /** @nullable */
+  institutionCountryCode?: string | null;
+  /**
+     * Official site URL — present only when the institution was selected from a lookup result, i.e. verified rather than freely typed.
+     * @nullable
+     */
+  institutionWebsite?: string | null;
+  /** @nullable */
+  institutionDomain?: string | null;
+  /** @nullable */
   programMajor?: string | null;
+  /** @nullable */
+  degree?: string | null;
   /** @nullable */
   gradeYear?: string | null;
   /** @nullable */
   expectedCompletionDate?: string | null;
   onboardingCompleted: boolean;
+  personalizationEnabled?: boolean;
 }

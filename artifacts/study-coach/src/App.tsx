@@ -5,6 +5,8 @@ import { ErrorBoundary } from "@/components/error-boundary";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
+import LandingPage from "@/pages/landing";
+import PrivacyPage from "@/pages/privacy";
 import DashboardPage from "@/pages/dashboard";
 import CoursePage from "@/pages/course";
 import TutorPage from "@/pages/tutor";
@@ -12,8 +14,11 @@ import QuizPage from "@/pages/quiz";
 import NewCoursePage from "@/pages/new-course";
 import OnboardingPage from "@/pages/onboarding";
 import AchievementsPage from "@/pages/achievements";
+import ProfilePage from "@/pages/profile";
+import SettingsPage from "@/pages/settings";
 import LoginPage from "@/pages/login";
 import { AuthProvider, useAuth } from "@/lib/auth-context";
+import { ThemeProvider } from "@/lib/theme";
 import { getGetProfileQueryKey, useGetProfile } from "@workspace/api-client-react";
 import { Route, Switch, useLocation, Router as WouterRouter } from "wouter";
 
@@ -47,6 +52,17 @@ function ProtectedRoute({ component: Component }: { component: () => ReactElemen
   );
 }
 
+// `/` is the one route that isn't uniformly public or protected: a
+// logged-out visitor needs something to evaluate (the landing page), while
+// a signed-in student lands on their dashboard. Everything else keeps its
+// existing all-public or all-protected behavior.
+function HomeRoute() {
+  const { session, loading } = useAuth();
+  if (loading) return null;
+  if (!session) return <LandingPage />;
+  return <ProtectedRoute component={DashboardPage} />;
+}
+
 function Router() {
   const { session, loading } = useAuth();
   const [location, setLocation] = useLocation();
@@ -61,12 +77,15 @@ function Router() {
     <RoutedErrorBoundary>
       <Switch>
         <Route path="/login" component={LoginPage} />
+        <Route path="/privacy" component={PrivacyPage} />
         <Route path="/onboarding" component={() => <RequireAuth><OnboardingPage /></RequireAuth>} />
-        <Route path="/" component={() => <ProtectedRoute component={DashboardPage} />} />
+        <Route path="/" component={HomeRoute} />
         <Route path="/course" component={() => <ProtectedRoute component={CoursePage} />} />
         <Route path="/tutor" component={() => <ProtectedRoute component={TutorPage} />} />
         <Route path="/quiz" component={() => <ProtectedRoute component={QuizPage} />} />
         <Route path="/achievements" component={() => <ProtectedRoute component={AchievementsPage} />} />
+        <Route path="/profile" component={() => <ProtectedRoute component={ProfilePage} />} />
+        <Route path="/settings" component={() => <ProtectedRoute component={SettingsPage} />} />
         <Route path="/courses/new" component={() => <ProtectedRoute component={NewCoursePage} />} />
         <Route component={NotFound} />
       </Switch>
@@ -82,14 +101,16 @@ function RoutedErrorBoundary({ children }: { children: ReactNode }) {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
-          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
-            <Router />
-          </WouterRouter>
-          <Toaster />
-        </TooltipProvider>
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <TooltipProvider>
+            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
+              <Router />
+            </WouterRouter>
+            <Toaster />
+          </TooltipProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

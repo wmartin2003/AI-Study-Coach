@@ -7,6 +7,8 @@ import type { CourseInput } from "@workspace/api-client-react";
 import { AppShell, Button, ErrorNotice, PageHeading } from "@/components/app-shell";
 import { Form } from "@/components/ui/form";
 import { supabase } from "@/lib/supabase";
+import { getApiErrorMessage, isBudgetError } from "@/lib/format";
+import { toast } from "@/hooks/use-toast";
 
 type UploadState = "idle" | "uploading" | "ready" | "failed";
 
@@ -57,6 +59,13 @@ export default function NewCoursePage() {
             setUploadState("failed");
           }
         },
+        onError: (err) => {
+          toast({
+            title: isBudgetError(err) ? "AI allowance reached" : "Couldn't create this course",
+            description: getApiErrorMessage(err, "We couldn't save this course. Your details are still here."),
+            variant: "destructive",
+          });
+        },
       },
     ),
   );
@@ -74,7 +83,7 @@ export default function NewCoursePage() {
             </Link>
           }
         />
-        <div className="mx-auto grid max-w-[1000px] gap-6 lg:grid-cols-[1fr_330px]">
+        <div className="mx-auto grid grid-cols-1 max-w-[1000px] gap-6 lg:grid-cols-[1fr_330px]">
           <Form {...form}>
             <form onSubmit={submit} className="rounded-[24px] border border-border bg-card p-5 sm:p-8" data-testid="form-create-course">
               <div className="mb-8">
@@ -129,7 +138,9 @@ export default function NewCoursePage() {
 
               {createCourse.isError && (
                 <div className="mt-5">
-                  <ErrorNotice message="We couldn't save this course. Your details are still here." />
+                  <ErrorNotice
+                    message={getApiErrorMessage(createCourse.error, "We couldn't save this course. Your details are still here.")}
+                  />
                 </div>
               )}
               <div className="mt-8 flex flex-col-reverse justify-between gap-3 border-t border-border pt-5 sm:flex-row sm:items-center">
@@ -207,9 +218,9 @@ export default function NewCoursePage() {
                 </p>
               )}
             </div>
-            <div className="rounded-[24px] bg-primary p-5 text-primary-foreground">
+            <div className="rounded-[24px] bg-sidebar p-5 text-sidebar-foreground">
               <p className="font-display text-xl font-semibold leading-tight">A good plan starts small.</p>
-              <p className="mt-2 text-[12px] leading-relaxed text-primary-foreground/60">Add the class now. You can build the rest as you go.</p>
+              <p className="mt-2 text-[12px] leading-relaxed text-sidebar-foreground/60">Add the class now. You can build the rest as you go.</p>
             </div>
           </aside>
         </div>

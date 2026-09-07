@@ -12,45 +12,52 @@ function levelForScore(score: number): string {
  * Nudges a topic's mastery score toward 100 on a correct answer and pulls it
  * down on a miss, with diminishing steps as the score approaches either end —
  * simple, bounded, and self-correcting rather than a flat +/- per question.
+ *
+ * `topicId` is nullable because an overall quiz's question topic label can,
+ * in rare cases, fail to match one of the course's real topics — when that
+ * happens the student still gets XP for answering, just no mastery to
+ * attribute it to.
  */
 export async function applyQuizResult(
   supabase: SupabaseClient,
   userId: string,
-  topicId: string,
+  topicId: string | null,
   correct: boolean,
 ): Promise<{ xp: number }> {
-  const { data: existing } = await supabase
-    .from("topic_mastery")
-    .select("mastery_score, questions_answered, questions_correct")
-    .eq("user_id", userId)
-    .eq("topic_id", topicId)
-    .maybeSingle();
+  if (topicId) {
+    const { data: existing } = await supabase
+      .from("topic_mastery")
+      .select("mastery_score, questions_answered, questions_correct")
+      .eq("user_id", userId)
+      .eq("topic_id", topicId)
+      .maybeSingle();
 
-  const currentScore = Number(existing?.mastery_score ?? 0);
-  const nextScore = correct
-    ? Math.min(100, currentScore + (100 - currentScore) * 0.35)
-    : Math.max(0, currentScore - currentScore * 0.25);
+    const currentScore = Number(existing?.mastery_score ?? 0);
+    const nextScore = correct
+      ? Math.min(100, currentScore + (100 - currentScore) * 0.35)
+      : Math.max(0, currentScore - currentScore * 0.25);
 
-  const questionsAnswered = (existing?.questions_answered ?? 0) + 1;
-  const questionsCorrect = (existing?.questions_correct ?? 0) + (correct ? 1 : 0);
+    const questionsAnswered = (existing?.questions_answered ?? 0) + 1;
+    const questionsCorrect = (existing?.questions_correct ?? 0) + (correct ? 1 : 0);
 
-  await supabase.from("topic_mastery").upsert(
-    {
-      user_id: userId,
-      topic_id: topicId,
-      mastery_score: nextScore,
-      level: levelForScore(nextScore),
-      questions_answered: questionsAnswered,
-      questions_correct: questionsCorrect,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "user_id,topic_id" },
-  );
+    await supabase.from("topic_mastery").upsert(
+      {
+        user_id: userId,
+        topic_id: topicId,
+        mastery_score: nextScore,
+        level: levelForScore(nextScore),
+        questions_answered: questionsAnswered,
+        questions_correct: questionsCorrect,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id,topic_id" },
+    );
 
-  await supabase
-    .from("topics")
-    .update({ mastery_score: nextScore, mastery_level: levelForScore(nextScore) })
-    .eq("id", topicId);
+    await supabase
+      .from("topics")
+      .update({ mastery_score: nextScore, mastery_level: levelForScore(nextScore) })
+      .eq("id", topicId);
+  }
 
   const xp = correct ? 10 : 3;
 
