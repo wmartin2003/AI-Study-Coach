@@ -6,17 +6,17 @@ import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
 
-// Tighter than aiRateLimit's 20/min — this is a public, unauthenticated
-// endpoint, so it's the first thing a script would hammer to try to burn
-// through invite codes or spam account creation.
+// Signup is now fully public with no account ceiling behind it — the only
+// thing standing between this URL and a script hammering it is this limit,
+// so it's deliberately tighter than aiRateLimit's 20/min or the 5/min this
+// used to be.
 const signupRateLimit = createIpRateLimit({
-  windowMs: 60_000,
-  maxRequests: 5,
-  message: "Too many attempts. Please wait a moment and try again.",
+  windowMs: 300_000,
+  maxRequests: 3,
+  message: "Too many attempts. Please wait a few minutes and try again.",
 });
 
 const GENERIC_INVITE_ERROR = "That invite code isn't valid or has already been used.";
-const CLOSED_MESSAGE = "Sign-ups are closed for now — join the waitlist and I'll open a spot.";
 const GENERIC_CREATE_ERROR = "Something went wrong creating your account. Please try again.";
 
 // Invite-only stays one env var away — flip this back to true for the real
@@ -26,32 +26,18 @@ function requiresInviteCode(): boolean {
   return process.env["SIGNUP_REQUIRE_INVITE"] === "true";
 }
 
-function maxAccounts(): number {
-  const raw = Number(process.env["MAX_ACCOUNTS"] ?? 40);
-  return Number.isFinite(raw) && raw > 0 ? raw : 40;
-}
-
-async function countAccounts(): Promise<number | null> {
-  const { count, error } = await supabaseAdmin.from("profiles").select("id", { count: "exact", head: true });
-  if (error) {
-    logger.error({ err: error }, "Failed to read account count");
-    return null;
-  }
-  return count ?? 0;
-}
-
 /**
  * Lets the frontend ask the API — rather than duplicating env vars across
  * two separately-deployed hosts (Vercel for the frontend, a different host
  * for this API) and risking them disagreeing about whether signup is open.
+ * `open` is always true now — the account ceiling (MAX_ACCOUNTS) is gone —
+ * but the field stays so a future cap (or a maintenance pause) doesn't need
+ * a new field and a new frontend release to use.
  */
-router.get("/signup/config", async (_req, res) => {
-  const count = await countAccounts();
-  if (count === null) return res.status(500).json({ error: "Something went wrong. Please try again." });
-
+router.get("/signup/config", (_req, res) => {
   return res.json(
     GetSignupConfigResponse.parse({
-      open: count < maxAccounts(),
+      open: true,
       requiresInviteCode: requiresInviteCode(),
     }),
   );
@@ -66,10 +52,12 @@ router.get("/signup/config", async (_req, res) => {
  * so this route creates the user itself via supabaseAdmin.auth.admin, which
  * requires the service-role key the browser never sees.
  *
- * Whether an invite code is actually required is controlled entirely by
- * SIGNUP_REQUIRE_INVITE (see requiresInviteCode above); when it's off, a
- * MAX_ACCOUNTS ceiling is what keeps "open to anyone with the URL" from
- * becoming "open-ended AI spend."
+ * There is no account ceiling here anymore — signup is open to anyone with
+ * the URL. What keeps that from becoming open-ended AI spend is entirely
+ * downstream, in lib/usage.ts: USER_MONTHLY_BUDGET_USD (per-student) and
+ * ai_service_state.monthly_budget_usd (global) are unchanged by this and
+ * are the only ceilings left. Whether an invite code is required at all is
+ * controlled entirely by SIGNUP_REQUIRE_INVITE (see requiresInviteCode above).
  */
 router.post("/signup", signupRateLimit, async (req, res) => {
   const input = SignupBody.parse(req.body);
@@ -86,16 +74,6 @@ router.post("/signup", signupRateLimit, async (req, res) => {
   }
   if (requireInvite && !inviteCode) {
     return res.status(400).json({ error: "An invite code is required." });
-  }
-
-  // A small race is acceptable here (per design) — this is a simple count,
-  // not a lock, so a burst of concurrent signups right at the cap could let
-  // a few extra accounts through. Logged so it's visible, not guarded.
-  const count = await countAccounts();
-  if (count === null) return res.status(500).json({ error: "Something went wrong. Please try again." });
-  if (count >= maxAccounts()) {
-    logger.warn({ count, maxAccounts: maxAccounts() }, "Signup rejected: account cap reached");
-    return res.status(503).json({ error: CLOSED_MESSAGE });
   }
 
   let redeemedCode: string | null = null;
@@ -118,10 +96,19 @@ router.post("/signup", signupRateLimit, async (req, res) => {
     redeemedCode = redeemed;
   }
 
+  // Deliberate: email_confirm is true, not false. The Supabase project has
+  // "Confirm email" turned on, and admin.createUser never sends a
+  // confirmation email itself (unlike the client-side signUp flow) — so
+  // `false` here created an account that could never sign in, ever, with no
+  // error the student could act on beyond "Email not confirmed". This app
+  // does not verify email addresses at 1.0. If that changes, the fix is
+  // generating and sending a real confirmation link (supabaseAdmin.auth.
+  // admin.generateLink({ type: "signup", ... })), not flipping this back —
+  // flipping it back reintroduces this exact dead end.
   const { data: created, error: createError } = await supabaseAdmin.auth.admin.createUser({
     email,
     password: input.password,
-    email_confirm: false,
+    email_confirm: true,
     user_metadata: { first_name: firstName, last_name: lastName },
   });
 

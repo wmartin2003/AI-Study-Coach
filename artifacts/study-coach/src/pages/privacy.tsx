@@ -15,7 +15,7 @@ export default function PrivacyPage() {
       <main className="mx-auto max-w-[820px] px-5 pb-24 sm:px-8">
         <h1 className="font-display text-3xl font-semibold tracking-[-0.03em] text-primary">Privacy</h1>
         <p className="mt-3 max-w-[600px] text-sm leading-relaxed text-muted-foreground">
-          This is a small, independently-run beta, not a company with a legal team — so instead of boilerplate, here's
+          This is run independently, not by a company with a legal team — so instead of boilerplate, here's
           a plain description of what this app actually does with your data.
         </p>
 

@@ -19,10 +19,15 @@ export interface SignupInput {
 }
 
 export interface SignupConfig {
-  /** False once the account cap (MAX_ACCOUNTS) is reached. */
+  /** Always true — there is no account ceiling. Kept as a field for a possible future cap or maintenance pause. */
   open: boolean;
   /** Mirrors the server's SIGNUP_REQUIRE_INVITE env var. */
   requiresInviteCode: boolean;
+}
+
+export interface Features {
+  /** Mirrors the server's TUTOR_ENABLED env var. When false, /tutor renders a Coming soon state and the tutor endpoints return 503. */
+  tutorEnabled: boolean;
 }
 
 export interface AccountCreated {

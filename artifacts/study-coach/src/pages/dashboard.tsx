@@ -1,7 +1,7 @@
 import { ArrowRight, BookOpen, Calendar, Check, ChevronDown, Clock3, Lightbulb, Plus, RotateCcw, Sparkles, Target, Trophy, X, Zap } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link } from "wouter";
-import { getGetDashboardQueryKey, useGetDashboard } from "@workspace/api-client-react";
+import { getGetDashboardQueryKey, getGetFeaturesQueryKey, useGetDashboard, useGetFeatures } from "@workspace/api-client-react";
 import type { Dashboard } from "@workspace/api-client-react";
 import { AppShell, Button, EmptyState, ErrorNotice, PageHeading, ProgressBar, SkeletonBlock, StatPill } from "@/components/app-shell";
 import { formatDate } from "@/lib/format";
@@ -11,6 +11,8 @@ const SAMPLE_BANNER_DISMISSED_KEY = "sample-course-banner-dismissed";
 
 export default function DashboardPage() {
   const dashboardQuery = useGetDashboard({ query: { queryKey: getGetDashboardQueryKey() } });
+  const featuresQuery = useGetFeatures({ query: { queryKey: getGetFeaturesQueryKey() } });
+  const tutorEnabled = featuresQuery.data?.tutorEnabled ?? false;
   const data = dashboardQuery.data;
   const tasks = useMemo(() => data?.tasks ?? [], [data]);
   const completed = tasks.filter((task) => task.completed).length;
@@ -29,7 +31,7 @@ export default function DashboardPage() {
   return <AppShell>
     <div className="coach-rise">
       <PageHeading eyebrow={dayLabel} title={data?.greeting || "Good morning"} description="Your next best step is ready when you are."
-        action={<Link href="/tutor" data-testid="link-dashboard-tutor" className="hidden items-center gap-2 text-[13px] font-semibold text-primary transition-transform hover:translate-x-0.5 sm:flex">Need a nudge? <ArrowRight className="h-4 w-4" /></Link>} />
+        action={tutorEnabled ? <Link href="/tutor" data-testid="link-dashboard-tutor" className="hidden items-center gap-2 text-[13px] font-semibold text-primary transition-transform hover:translate-x-0.5 sm:flex">Need a nudge? <ArrowRight className="h-4 w-4" /></Link> : undefined} />
       {data?.isSampleCourse && !bannerDismissed && (
         <div className="mb-6 flex items-start gap-3 rounded-2xl border border-accent/30 bg-accent/10 p-4 sm:items-center" data-testid="banner-sample-course">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent/25 text-primary"><Sparkles className="h-4 w-4" /></div>
@@ -66,7 +68,7 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.25fr_.75fr]">
           <section className="rounded-[22px] border border-border bg-card p-5 sm:p-6">
             <div className="mb-5 flex items-end justify-between"><div><p className="font-mono-ui text-[10px] uppercase tracking-[0.16em] text-muted-foreground">The plan</p><h2 className="mt-1 font-display text-2xl font-semibold tracking-[-0.03em] text-primary">Today's rhythm</h2></div><span className="rounded-full bg-secondary px-3 py-1.5 font-mono-ui text-[10px] text-muted-foreground">{completed} of {tasks.length} done</span></div>
-            <div className="space-y-2">{visibleTasks.map((task, index) => <TaskRow key={`${task.label}-${index}`} task={task} index={index} />)}</div>
+            <div className="space-y-2">{visibleTasks.map((task, index) => <TaskRow key={`${task.label}-${index}`} task={task} index={index} tutorEnabled={tutorEnabled} />)}</div>
             {hiddenCount > 0 && (
               <button
                 type="button"
@@ -81,7 +83,7 @@ export default function DashboardPage() {
           </section>
           <section className="rounded-[22px] border border-border bg-card p-5 sm:p-6">
             <div className="mb-5 flex items-center gap-2"><div className="flex h-8 w-8 items-center justify-center rounded-xl bg-accent/25 text-primary"><Target className="h-4 w-4" /></div><div><p className="font-mono-ui text-[10px] uppercase tracking-[0.16em] text-muted-foreground">A gentle focus</p><h2 className="mt-0.5 font-display text-xl font-semibold text-primary">Build this next</h2></div></div>
-            <div className="rounded-2xl bg-secondary/70 p-4"><p className="font-mono-ui text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Focus topic</p><p className="mt-2 font-display text-[22px] font-semibold leading-tight text-primary">{data.focusTopic || "Add your first topic"}</p><p className="mt-2 text-[12px] leading-relaxed text-muted-foreground">{data.focusReason || "A short explanation with your tutor will make this click."}</p><Link href="/tutor" data-testid="link-focus-tutor" className="mt-4 inline-flex items-center gap-1.5 text-[12px] font-bold text-primary">Explore with tutor <ArrowRight className="h-3.5 w-3.5" /></Link></div>
+            <div className="rounded-2xl bg-secondary/70 p-4"><p className="font-mono-ui text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Focus topic</p><p className="mt-2 font-display text-[22px] font-semibold leading-tight text-primary">{data.focusTopic || "Add your first topic"}</p><p className="mt-2 text-[12px] leading-relaxed text-muted-foreground">{data.focusReason || "A short explanation with your tutor will make this click."}</p>{tutorEnabled && <Link href="/tutor" data-testid="link-focus-tutor" className="mt-4 inline-flex items-center gap-1.5 text-[12px] font-bold text-primary">Explore with tutor <ArrowRight className="h-3.5 w-3.5" /></Link>}</div>
             {data.strongestTopic && <div className="mt-4 flex items-center gap-3 border-t border-border pt-4"><Lightbulb className="h-4 w-4 text-chart-3" /><p className="text-[12px] text-muted-foreground">Your strongest topic is <strong className="font-semibold text-primary">{data.strongestTopic}</strong>.</p></div>}
           </section>
         </div>
@@ -112,12 +114,13 @@ const TASK_ICON: Record<string, typeof Zap> = { Quiz: Zap, Learn: BookOpen, Revi
 /**
  * Every task carries the real course (and, where relevant, topic/quiz) it's
  * about, so the arrow always lands somewhere genuinely useful instead of a
- * generic "/quiz" — a Learn task opens that exact topic's study guide, a
- * Review task with a quizId opens that quiz's review, and a mistakes-only
- * Review task goes to the tutor, which is the only place mistakes are
- * actually surfaced today.
+ * generic "/quiz" — a Learn task opens that exact topic's study guide, and a
+ * Review task with a quizId opens that quiz's review. A mistakes-only Review
+ * task (no quizId) used to go to the tutor — the only place mistakes were
+ * surfaced — but with the tutor locked there's nothing sensible left to send
+ * it to, so it renders with no link at all rather than a dead end.
  */
-function taskHref(task: Dashboard["tasks"][number]): string {
+function taskHref(task: Dashboard["tasks"][number], tutorEnabled: boolean): string | null {
   if (task.kind === "Learn" && task.topicName) {
     return `/course?course=${task.courseId}&tab=topics&topic=${encodeURIComponent(task.topicName)}&guide=1`;
   }
@@ -125,7 +128,7 @@ function taskHref(task: Dashboard["tasks"][number]): string {
     return `/quiz?course=${task.courseId}&review=${task.quizId}`;
   }
   if (task.kind === "Review") {
-    return `/tutor?course=${task.courseId}`;
+    return tutorEnabled ? `/tutor?course=${task.courseId}` : null;
   }
   if (task.kind === "Quiz") {
     return `/quiz?course=${task.courseId}`;
@@ -133,15 +136,16 @@ function taskHref(task: Dashboard["tasks"][number]): string {
   return `/course?course=${task.courseId}`;
 }
 
-function TaskRow({ task, index }: { task: Dashboard["tasks"][number]; index: number }) {
+function TaskRow({ task, index, tutorEnabled }: { task: Dashboard["tasks"][number]; index: number; tutorEnabled: boolean }) {
   const Icon = TASK_ICON[task.kind] ?? Clock3;
+  const href = taskHref(task, tutorEnabled);
   return <div className={`group flex items-center gap-3 rounded-2xl border p-3 transition-colors ${task.completed ? "border-transparent bg-secondary/60" : "border-border hover:border-primary/25 hover:bg-secondary/40"}`} data-testid={`row-task-${index}`}>
     <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${task.completed ? "bg-primary text-primary-foreground" : "bg-accent/25 text-primary"}`}>{task.completed ? <Check className="h-4 w-4" /> : <Icon className="h-4 w-4" />}</div>
     <div className="min-w-0 flex-1">
       <p className={`truncate text-[13px] font-semibold ${task.completed ? "text-muted-foreground line-through" : "text-primary"}`}>{task.label}</p>
       <p className="mt-0.5 truncate text-[11px] text-muted-foreground">{task.kind} · {task.duration} · {task.courseName}</p>
     </div>
-    {!task.completed && <Link href={taskHref(task)} data-testid={`link-task-${index}`} className="rounded-lg p-2 text-muted-foreground opacity-0 transition-all hover:bg-muted hover:text-primary group-hover:opacity-100"><ArrowRight className="h-4 w-4" /></Link>}
+    {!task.completed && href && <Link href={href} data-testid={`link-task-${index}`} className="rounded-lg p-2 text-muted-foreground opacity-0 transition-all hover:bg-muted hover:text-primary group-hover:opacity-100"><ArrowRight className="h-4 w-4" /></Link>}
   </div>;
 }
 

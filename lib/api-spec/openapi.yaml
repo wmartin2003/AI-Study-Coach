@@ -56,6 +56,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SignupConfig"
+  /features:
+    get:
+      operationId: getFeatures
+      tags: [study]
+      summary: Server-side feature flags the frontend must not duplicate as its own env vars (public — no auth required)
+      responses:
+        "200":
+          description: Feature flags
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Features"
   /waitlist:
     post:
       operationId: joinWaitlist
@@ -656,8 +668,13 @@ components:
       type: object
       required: [open, requiresInviteCode]
       properties:
-        open: { type: boolean, description: "False once the account cap (MAX_ACCOUNTS) is reached." }
+        open: { type: boolean, description: "Always true — there is no account ceiling. Kept as a field for a possible future cap or maintenance pause." }
         requiresInviteCode: { type: boolean, description: "Mirrors the server's SIGNUP_REQUIRE_INVITE env var." }
+    Features:
+      type: object
+      required: [tutorEnabled]
+      properties:
+        tutorEnabled: { type: boolean, description: "Mirrors the server's TUTOR_ENABLED env var. When false, /tutor renders a Coming soon state and the tutor endpoints return 503." }
     AccountCreated:
       type: object
       required: [ok]

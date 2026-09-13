@@ -7,7 +7,7 @@
  */
 
 export interface SignupConfig {
-  /** False once the account cap (MAX_ACCOUNTS) is reached. */
+  /** Always true — there is no account ceiling. Kept as a field for a possible future cap or maintenance pause. */
   open: boolean;
   /** Mirrors the server's SIGNUP_REQUIRE_INVITE env var. */
   requiresInviteCode: boolean;

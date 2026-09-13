@@ -37,8 +37,16 @@ export const SignupResponse = zod.object({
  * @summary Whether signup is currently open and whether it requires an invite code (public — no auth required)
  */
 export const GetSignupConfigResponse = zod.object({
-  "open": zod.boolean().describe('False once the account cap (MAX_ACCOUNTS) is reached.'),
+  "open": zod.boolean().describe('Always true — there is no account ceiling. Kept as a field for a possible future cap or maintenance pause.'),
   "requiresInviteCode": zod.boolean().describe('Mirrors the server\'s SIGNUP_REQUIRE_INVITE env var.')
+})
+
+
+/**
+ * @summary Server-side feature flags the frontend must not duplicate as its own env vars (public — no auth required)
+ */
+export const GetFeaturesResponse = zod.object({
+  "tutorEnabled": zod.boolean().describe('Mirrors the server\'s TUTOR_ENABLED env var. When false, \/tutor renders a Coming soon state and the tutor endpoints return 503.')
 })
 
 

@@ -26,6 +26,7 @@ export * from './documentUrl';
 export * from './extractedEvent';
 export * from './extractedTopic';
 export * from './extractionApplyResult';
+export * from './features';
 export * from './getTutorConversationParams';
 export * from './healthStatus';
 export * from './institution';
