@@ -118,10 +118,19 @@ router.post("/signup", signupRateLimit, async (req, res) => {
     redeemedCode = redeemed;
   }
 
+  // Deliberate: email_confirm is true, not false. The Supabase project has
+  // "Confirm email" turned on, and admin.createUser never sends a
+  // confirmation email itself (unlike the client-side signUp flow) — so
+  // `false` here created an account that could never sign in, ever, with no
+  // error the student could act on beyond "Email not confirmed". This app
+  // does not verify email addresses at 1.0. If that changes, the fix is
+  // generating and sending a real confirmation link (supabaseAdmin.auth.
+  // admin.generateLink({ type: "signup", ... })), not flipping this back —
+  // flipping it back reintroduces this exact dead end.
   const { data: created, error: createError } = await supabaseAdmin.auth.admin.createUser({
     email,
     password: input.password,
-    email_confirm: false,
+    email_confirm: true,
     user_metadata: { first_name: firstName, last_name: lastName },
   });
 

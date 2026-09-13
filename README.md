@@ -162,6 +162,7 @@ This regenerates the Zod schemas in `lib/api-zod` and the React Query hooks in `
 
 ## Security notes
 
+- **Email addresses are not verified at 1.0.** `POST /api/signup` creates accounts via `supabaseAdmin.auth.admin.createUser({ email_confirm: true, ... })` — confirmed immediately, no confirmation email sent. This is deliberate, not an oversight: `admin.createUser` never sends a confirmation email itself (that's a client-side `signUp` behavior), so with the Supabase project's "Confirm email" setting on and `email_confirm: false`, every new account was unconfirmed with no email ever arriving — a dead end, not a security feature. If real email verification is added later, the fix is generating and sending an actual link (`supabaseAdmin.auth.admin.generateLink({ type: "signup", ... })`), not flipping `email_confirm` back to `false`.
 - The Supabase secret (service role) key and the Anthropic API key are read only by the API server (`artifacts/api-server`) and are never bundled into frontend code — only `VITE_`-prefixed variables reach the browser.
 - Every table is protected by Postgres Row Level Security (`supabase/migrations/0001_init.sql`, `0002_profiles_courses_events_badges.sql`); the API server never trusts a client-sent user id — it derives the authenticated user from the verified Supabase session on every request.
 - Rotate any key immediately if it's ever pasted into a chat, ticket, or shared document.
