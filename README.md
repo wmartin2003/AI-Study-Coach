@@ -54,7 +54,6 @@ cp artifacts/study-coach/.env.example artifacts/study-coach/.env
 | `ALLOWED_ORIGINS` | Comma-separated list of origins allowed to call the API in production (e.g. `https://app.example.com`). Falls back to `localhost` in development. |
 | `USER_MONTHLY_BUDGET_USD` | Optional. Default per-user monthly AI spend cap in USD (default **$1.00** if unset); a student's `profiles.monthly_budget_usd`, when set, overrides this for that student. |
 | `SIGNUP_REQUIRE_INVITE` | Optional, default `false`. See "Spend and signup caps" below. |
-| `MAX_ACCOUNTS` | Optional, default `40`. See "Spend and signup caps" below. |
 | `TUTOR_ENABLED` | Optional, default `false`. See "The tutor flag" below. |
 
 `artifacts/study-coach/.env` only needs the two `VITE_*` values (Vite only exposes env vars prefixed `VITE_` to the frontend bundle — this is what keeps the secret key out of the browser).
@@ -69,11 +68,10 @@ The AI tutor is held back at 1.0 behind `TUTOR_ENABLED` (env, default `false`). 
 
 ### Spend and signup caps
 
-Three independent ceilings, checked in this order on every AI call and on every signup:
+There is no account ceiling — signup is open to anyone with the URL (`POST /api/signup` is rate-limited by IP, but nothing caps the total number of accounts). With that gone, these two budget caps are the *only* things standing between a public URL and open-ended AI spend, checked in this order on every AI call:
 
-1. **`ai_service_state.monthly_budget_usd`** (default **$35/month**, a database row, not an env var) — a global kill switch. Once this month's total spend across every student reaches it, every AI call in the app returns 503 until next month (or until you raise it). Change it directly in Supabase (`update ai_service_state set monthly_budget_usd = 50 where id = 1;`) or flip `ai_service_state.paused = true` to stop AI calls immediately regardless of spend.
+1. **`ai_service_state.monthly_budget_usd`** (default **$35/month**, a database row, not an env var) — a global kill switch. Once this month's total spend across every student reaches it, every AI call in the app returns 503 until next month (or until you raise it) — courses, the plan, the calendar, and progress all keep working normally; only the AI-backed features (tutor, quiz generation, study guides, syllabus extraction, topic generation) report unavailable. Change it directly in Supabase (`update ai_service_state set monthly_budget_usd = 50 where id = 1;`) or flip `ai_service_state.paused = true` to stop AI calls immediately regardless of spend.
 2. **`USER_MONTHLY_BUDGET_USD`** (default **$1.00/month**, env var) — the default per-student cap. A student who hits it gets a 429 with a clear message; everything else in the app keeps working.
-3. **`MAX_ACCOUNTS`** (default **40**, env var) — a hard ceiling on total accounts. `POST /api/signup` returns 503 once `profiles` has this many rows.
 
 **To raise a specific student's cap** (e.g. they're doing something that legitimately needs more room), set it on their profile row rather than raising the global default:
 
@@ -135,7 +133,7 @@ The frontend and API are deployed as two separate hosts, fed from this GitHub re
 | `SUPABASE_SECRET_KEY` | — | ✅ |
 | `ALLOWED_ORIGINS` | — | ✅ (set to your Vercel URL) |
 | `NODE_ENV` | — | ✅ (`production`) |
-| `USER_MONTHLY_BUDGET_USD`, `SIGNUP_REQUIRE_INVITE`, `MAX_ACCOUNTS` | — | ✅ (all have safe defaults baked into `render.yaml`) |
+| `USER_MONTHLY_BUDGET_USD`, `SIGNUP_REQUIRE_INVITE`, `TUTOR_ENABLED` | — | ✅ (all have safe defaults baked into `render.yaml`) |
 | `SUPABASE_DB_URL` | — | — (only ever used to run migrations from your own machine, never by either deployed host) |
 
 **Running migrations against production**: same command as local setup, pointed at your production `SUPABASE_DB_URL` (Supabase → Settings → Database) instead of a dev project:
@@ -145,7 +143,7 @@ SUPABASE_DB_URL="<production connection string>" \
 ```
 Run this from your own machine before or after a deploy that adds a new migration file — neither host runs migrations automatically.
 
-**Flipping the signup/spend caps in production** — no code changes for any of these, only a redeploy (env vars) or a direct SQL statement (the database ones): see "Spend and signup caps" above for exactly what each one does and how to change it. In short: `SIGNUP_REQUIRE_INVITE` and `MAX_ACCOUNTS` are Render env vars (edit in `render.yaml` or the Render dashboard, then redeploy); `ai_service_state.monthly_budget_usd` and a specific student's `profiles.monthly_budget_usd` are database rows you update directly in Supabase.
+**Flipping the signup/spend/tutor settings in production** — no code changes for any of these, only a redeploy (env vars) or a direct SQL statement (the database ones): see "The tutor flag" and "Spend and signup caps" above for exactly what each one does and how to change it. In short: `SIGNUP_REQUIRE_INVITE` and `TUTOR_ENABLED` are Render env vars (edit in `render.yaml` or the Render dashboard, then redeploy); `ai_service_state.monthly_budget_usd` and a specific student's `profiles.monthly_budget_usd` are database rows you update directly in Supabase.
 
 ## Where things live
 

@@ -668,7 +668,7 @@ components:
       type: object
       required: [open, requiresInviteCode]
       properties:
-        open: { type: boolean, description: "False once the account cap (MAX_ACCOUNTS) is reached." }
+        open: { type: boolean, description: "Always true — there is no account ceiling. Kept as a field for a possible future cap or maintenance pause." }
         requiresInviteCode: { type: boolean, description: "Mirrors the server's SIGNUP_REQUIRE_INVITE env var." }
     Features:
       type: object

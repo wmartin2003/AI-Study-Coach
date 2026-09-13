@@ -7,14 +7,15 @@ import { getApiErrorMessage } from "@/lib/format";
 
 export default function LandingPage() {
   // Signup being open or closed (and whether it needs a code) is entirely
-  // server-side state (SIGNUP_REQUIRE_INVITE, MAX_ACCOUNTS) — asking the API
-  // rather than hardcoding it here means this page and login.tsx can never
+  // server-side state (currently just SIGNUP_REQUIRE_INVITE — there's no
+  // account ceiling anymore, `open` is always true) — asking the API rather
+  // than hardcoding it here means this page and login.tsx can never
   // disagree with each other or with the two separately-deployed hosts.
   const configQuery = useGetSignupConfig({ query: { queryKey: getGetSignupConfigQueryKey() } });
-  // Default to "closed" (the safer assumption) while still loading — this
-  // page shouldn't promise "create your account" for even a moment if it
-  // turns out signups are actually shut.
-  const open = configQuery.data?.open ?? false;
+  // Signup has no closed state left to default to defensively — assume open
+  // even while this is still loading, so the page never flashes a stale
+  // "waitlist" fallback for the one request this takes to resolve.
+  const open = configQuery.data?.open ?? true;
   const requiresInviteCode = configQuery.data?.requiresInviteCode ?? true;
 
   return (
@@ -53,7 +54,7 @@ function Hero({ open, requiresInviteCode }: { open: boolean; requiresInviteCode:
   return (
     <section className="pt-10 text-center sm:pt-16">
       <div className="mx-auto mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-1.5 font-mono-ui text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-        <span className="h-1.5 w-1.5 rounded-full bg-accent" /> {open ? "Open for students" : "Closed beta"}
+        <span className="h-1.5 w-1.5 rounded-full bg-accent" /> Open for students
       </div>
       <h1 className="mx-auto max-w-[820px] font-display text-4xl font-semibold leading-[1.08] tracking-[-0.04em] text-primary sm:text-6xl">
         Upload your syllabus. Get a plan that covers <span className="text-accent">every</span> course.

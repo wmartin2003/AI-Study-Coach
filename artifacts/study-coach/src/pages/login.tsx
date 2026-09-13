@@ -26,10 +26,6 @@ export default function LoginPage() {
   // duplicating env vars across both hosts and risking them disagreeing.
   const configQuery = useGetSignupConfig({ query: { queryKey: getGetSignupConfigQueryKey() } });
   const requiresInviteCode = configQuery.data?.requiresInviteCode ?? false;
-  // Default to "open" while the config is still loading — briefly showing
-  // the form is a much smaller cost than briefly showing "signups are
-  // closed" when they aren't.
-  const signupOpen = configQuery.data?.open ?? true;
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -101,20 +97,6 @@ export default function LoginPage() {
             {mode === "sign-in" ? "Ready to pick up where you left off?" : "Start your study path."}
           </h1>
 
-          {mode === "sign-up" && !signupOpen ? (
-            <div className="mt-7" data-testid="status-signup-closed">
-              <p className="text-sm leading-relaxed text-muted-foreground">
-                We've reached today's limit on new accounts. Join the waitlist and I'll open a spot for you.
-              </p>
-              <a
-                href="/#waitlist"
-                data-testid="link-signup-closed-waitlist"
-                className="mt-5 inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-[13px] font-semibold text-primary-foreground transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/15"
-              >
-                <Mail className="h-4 w-4" /> Join the waitlist
-              </a>
-            </div>
-          ) : (
           <form onSubmit={submit} className="mt-7 space-y-4" data-testid="form-auth">
             {mode === "sign-up" && (
               <div className="grid grid-cols-2 gap-3">
@@ -193,7 +175,7 @@ export default function LoginPage() {
                   data-testid="input-invite-code"
                   className="form-input mt-2"
                 />
-                <p className="mt-1.5 text-[12px] text-muted-foreground">We're in closed beta — you'll need a code from someone already in.</p>
+                <p className="mt-1.5 text-[12px] text-muted-foreground">You'll need a code from someone already in.</p>
               </div>
             )}
 
@@ -224,7 +206,6 @@ export default function LoginPage() {
               </button>
             )}
           </form>
-          )}
         </div>
 
         <button
