@@ -43,6 +43,14 @@ export const GetSignupConfigResponse = zod.object({
 
 
 /**
+ * @summary Server-side feature flags the frontend must not duplicate as its own env vars (public — no auth required)
+ */
+export const GetFeaturesResponse = zod.object({
+  "tutorEnabled": zod.boolean().describe('Mirrors the server\'s TUTOR_ENABLED env var. When false, \/tutor renders a Coming soon state and the tutor endpoints return 503.')
+})
+
+
+/**
  * @summary Join the closed-beta waitlist (public — no auth required)
  */
 export const JoinWaitlistBody = zod.object({

@@ -25,6 +25,11 @@ export interface SignupConfig {
   requiresInviteCode: boolean;
 }
 
+export interface Features {
+  /** Mirrors the server's TUTOR_ENABLED env var. When false, /tutor renders a Coming soon state and the tutor endpoints return 503. */
+  tutorEnabled: boolean;
+}
+
 export interface AccountCreated {
   ok: boolean;
 }

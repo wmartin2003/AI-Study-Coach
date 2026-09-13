@@ -55,10 +55,17 @@ cp artifacts/study-coach/.env.example artifacts/study-coach/.env
 | `USER_MONTHLY_BUDGET_USD` | Optional. Default per-user monthly AI spend cap in USD (default **$1.00** if unset); a student's `profiles.monthly_budget_usd`, when set, overrides this for that student. |
 | `SIGNUP_REQUIRE_INVITE` | Optional, default `false`. See "Spend and signup caps" below. |
 | `MAX_ACCOUNTS` | Optional, default `40`. See "Spend and signup caps" below. |
+| `TUTOR_ENABLED` | Optional, default `false`. See "The tutor flag" below. |
 
 `artifacts/study-coach/.env` only needs the two `VITE_*` values (Vite only exposes env vars prefixed `VITE_` to the frontend bundle — this is what keeps the secret key out of the browser).
 
 Never commit `.env` files — they're already gitignored.
+
+### The tutor flag
+
+The AI tutor is held back at 1.0 behind `TUTOR_ENABLED` (env, default `false`). The lock is server-side, not a hidden button: with the flag off, `POST /api/tutor/messages` and `GET /api/tutor/conversation` return 503 before any Anthropic call or budget check runs, and `GET /api/features` reports `{ tutorEnabled: false }` so the frontend never disagrees with the API about it. `/tutor` stays a working route — it renders a "Coming soon" state instead of the chat, with no conversation fetched and nothing to fetch.
+
+**To turn it on**: set `TUTOR_ENABLED=true` on the API host and redeploy. Every entry point (the sidebar, the dashboard, the course page) reads the same `GET /api/features` flag, so it all comes back — sidebar item, dashboard links, the Practice tab card, the study-guide link, the chat itself — with no other code changes.
 
 ### Spend and signup caps
 

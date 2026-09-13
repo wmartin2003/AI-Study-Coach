@@ -33,3 +33,5 @@ services:
         value: "false"
       - key: MAX_ACCOUNTS
         value: "40"
+      - key: TUTOR_ENABLED
+        value: "false"

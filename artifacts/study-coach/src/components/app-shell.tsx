@@ -1,15 +1,15 @@
 import { Award, BookOpen, Brain, CalendarDays, ChevronRight, LayoutDashboard, Library, ListChecks, LogOut, Menu, Plus, Settings, Sparkles, X } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { getGetProfileQueryKey, useGetProfile } from "@workspace/api-client-react";
+import { getGetFeaturesQueryKey, getGetProfileQueryKey, useGetFeatures, useGetProfile } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth-context";
 
 const navItems = [
-  { href: "/", label: "Today", icon: LayoutDashboard },
-  { href: "/course", label: "Course workspace", icon: Library },
-  { href: "/tutor", label: "Ask your tutor", icon: Brain },
-  { href: "/quiz", label: "Adaptive quiz", icon: ListChecks },
-  { href: "/achievements", label: "Achievements", icon: Award },
+  { href: "/", label: "Today", icon: LayoutDashboard, comingSoonIfDisabled: false },
+  { href: "/course", label: "Course workspace", icon: Library, comingSoonIfDisabled: false },
+  { href: "/tutor", label: "Ask your tutor", icon: Brain, comingSoonIfDisabled: true },
+  { href: "/quiz", label: "Adaptive quiz", icon: ListChecks, comingSoonIfDisabled: false },
+  { href: "/achievements", label: "Achievements", icon: Award, comingSoonIfDisabled: false },
 ];
 
 export function BrandMark() {
@@ -30,6 +30,10 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   // Shares its cache with every other page that calls useGetProfile(), so
   // this never triggers an extra request beyond what's already loaded.
   const profileQuery = useGetProfile({ query: { queryKey: getGetProfileQueryKey() } });
+  // Shared with every other page that calls this — one extra cheap request
+  // at most, never duplicated across the app.
+  const featuresQuery = useGetFeatures({ query: { queryKey: getGetFeaturesQueryKey() } });
+  const tutorEnabled = featuresQuery.data?.tutorEnabled ?? false;
   // Never fall back to the account email here — it's not meant to be
   // displayed, and doing so was the bug this replaced.
   const displayName = profileQuery.data?.fullName?.trim() || "Student";
@@ -44,14 +48,21 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       <div className="mb-10 px-1"><BrandMark /></div>
       <p className="mb-3 px-3 font-mono-ui text-[10px] font-semibold uppercase tracking-[0.18em] text-sidebar-foreground/45">Your desk</p>
       <nav className="space-y-1" aria-label="Primary navigation">
-        {navItems.map(({ href, label, icon: Icon }) => {
+        {navItems.map(({ href, label, icon: Icon, comingSoonIfDisabled }) => {
           const active = href === "/" ? location === "/" : location.startsWith(href);
+          const comingSoon = comingSoonIfDisabled && !tutorEnabled;
           return (
+            // Still a real link even when its feature is off — the point of
+            // a flag is that flipping it back on needs no further changes,
+            // and a route that vanishes here would be one more thing to undo.
             <Link key={href} href={href} onClick={onNavigate} data-testid={`link-nav-${label.toLowerCase().replaceAll(" ", "-")}`}
               className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all duration-200 ${active ? "bg-sidebar-accent text-sidebar-foreground shadow-[inset_3px_0_0_hsl(var(--accent))]" : "text-sidebar-foreground/65 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground"}`}>
               <Icon className={`h-[17px] w-[17px] ${active ? "text-accent" : "text-sidebar-foreground/50 group-hover:text-accent/80"}`} strokeWidth={active ? 2.3 : 1.8} />
               <span>{label}</span>
-              {active && <ChevronRight className="ml-auto h-3.5 w-3.5 text-sidebar-foreground/35" />}
+              {comingSoon && (
+                <span className="ml-auto rounded-full bg-sidebar-foreground/10 px-2 py-0.5 font-mono-ui text-[9px] uppercase tracking-wider text-sidebar-foreground/50">Soon</span>
+              )}
+              {!comingSoon && active && <ChevronRight className="ml-auto h-3.5 w-3.5 text-sidebar-foreground/35" />}
             </Link>
           );
         })}

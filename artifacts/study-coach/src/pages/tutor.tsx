@@ -1,15 +1,17 @@
-import { ArrowUp, Brain, CheckCircle2, ChevronDown, Lightbulb, RotateCcw, Sparkles } from "lucide-react";
+import { ArrowRight, ArrowUp, Brain, CheckCircle2, ChevronDown, LayoutDashboard, Library, Lightbulb, ListChecks, RotateCcw, Sparkles } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { useSearchParams } from "wouter";
+import { Link, useSearchParams } from "wouter";
 import {
   useSendTutorMessage,
   useGetTutorConversation,
   getGetTutorConversationQueryKey,
   useListCourses,
   getListCoursesQueryKey,
+  useGetFeatures,
+  getGetFeaturesQueryKey,
 } from "@workspace/api-client-react";
 import type { TutorMessage } from "@workspace/api-client-react";
-import { AppShell, ErrorNotice, PageHeading } from "@/components/app-shell";
+import { AppShell, ErrorNotice, PageHeading, SkeletonBlock } from "@/components/app-shell";
 import { TutorMarkdown } from "@/components/tutor-markdown";
 import { toast } from "@/hooks/use-toast";
 import { getApiErrorMessage, isBudgetError } from "@/lib/format";
@@ -18,8 +20,15 @@ type ChatMessage = { role: string; message: string; prompt?: string };
 const GENERAL = "__general__";
 
 export default function TutorPage() {
+  const featuresQuery = useGetFeatures({ query: { queryKey: getGetFeaturesQueryKey() } });
+  // Default to disabled while loading, not enabled — this is what actually
+  // keeps the conversation/course queries below from firing on mount before
+  // we know the flag's real value, which matters more than the one-frame
+  // flash it costs once the tutor is really on.
+  const tutorEnabled = featuresQuery.data?.tutorEnabled ?? false;
+
   const [searchParams] = useSearchParams();
-  const coursesQuery = useListCourses(undefined, { query: { queryKey: getListCoursesQueryKey() } });
+  const coursesQuery = useListCourses(undefined, { query: { queryKey: getListCoursesQueryKey(), enabled: tutorEnabled } });
   const courses = (coursesQuery.data ?? []).filter((c) => c.status === "active");
 
   const [courseId, setCourseId] = useState<string>(searchParams.get("course") ?? GENERAL);
@@ -31,7 +40,7 @@ export default function TutorPage() {
 
   const conversationQuery = useGetTutorConversation(
     { courseId: effectiveCourseId ?? undefined },
-    { query: { queryKey: getGetTutorConversationQueryKey({ courseId: effectiveCourseId ?? undefined }) } },
+    { query: { queryKey: getGetTutorConversationQueryKey({ courseId: effectiveCourseId ?? undefined }), enabled: tutorEnabled } },
   );
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -93,6 +102,21 @@ export default function TutorPage() {
     topicName,
     masteryLevel: activeTopicMastery,
   });
+
+  if (featuresQuery.isLoading) {
+    return (
+      <AppShell>
+        <div className="coach-rise">
+          <PageHeading eyebrow="Socratic tutor" title="Think it through." description="A conversation that helps you reach the answer yourself." />
+          <SkeletonBlock className="h-[600px] rounded-[24px]" />
+        </div>
+      </AppShell>
+    );
+  }
+
+  if (!tutorEnabled) {
+    return <ComingSoonTutor />;
+  }
 
   return (
     <AppShell>
@@ -241,6 +265,53 @@ export default function TutorPage() {
         </div>
       </div>
     </AppShell>
+  );
+}
+
+/**
+ * The route stays alive and reachable (several places deep-link here) —
+ * it just doesn't show a chat. No conversation is fetched, no message list
+ * renders, no input exists to type into. Same shell, same type scale, same
+ * palette as every other page; this is a state of this page, not a new one.
+ */
+function ComingSoonTutor() {
+  return (
+    <AppShell>
+      <div className="coach-rise">
+        <PageHeading eyebrow="Socratic tutor" title="Coming soon." description="The AI tutor isn't turned on yet." />
+        <div className="rounded-[24px] border border-dashed border-border bg-card/50 p-10 text-center" data-testid="status-tutor-coming-soon">
+          <div className="mx-auto mb-4 flex h-11 w-11 items-center justify-center rounded-2xl bg-accent/30 text-primary">
+            <Brain className="h-5 w-5" />
+          </div>
+          <h3 className="font-display text-xl font-semibold text-primary">Not available yet</h3>
+          <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">
+            We're not ready to turn this on for everyone. Nothing else changed — your plan, courses, and quizzes are all still here.
+          </p>
+        </div>
+        <div className="mt-6 grid gap-3 sm:grid-cols-3">
+          <ComingSoonLink href="/" icon={LayoutDashboard} title="Today's plan" description="Pick up where you left off" />
+          <ComingSoonLink href="/course" icon={Library} title="Course workspace" description="Topics, notes, and progress" />
+          <ComingSoonLink href="/quiz" icon={ListChecks} title="Adaptive quiz" description="Test your recall" />
+        </div>
+      </div>
+    </AppShell>
+  );
+}
+
+function ComingSoonLink({ href, icon: Icon, title, description }: { href: string; icon: typeof Brain; title: string; description: string }) {
+  return (
+    <Link
+      href={href}
+      data-testid={`link-tutor-coming-soon-${title.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-")}`}
+      className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 transition-colors hover:border-primary/30 hover:bg-secondary"
+    >
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent/30 text-primary"><Icon className="h-4 w-4" /></div>
+      <div className="min-w-0">
+        <p className="text-[13px] font-semibold text-primary">{title}</p>
+        <p className="mt-0.5 text-[11px] text-muted-foreground">{description}</p>
+      </div>
+      <ArrowRight className="ml-auto h-4 w-4 shrink-0 text-muted-foreground" />
+    </Link>
   );
 }
 

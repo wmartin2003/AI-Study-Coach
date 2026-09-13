@@ -26,6 +26,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "wouter";
 import {
   getGetDashboardQueryKey,
+  getGetFeaturesQueryKey,
   getGetTopicStudyMaterialQueryKey,
   getGetTutorConversationQueryKey,
   getListCourseDocumentsQueryKey,
@@ -39,6 +40,7 @@ import {
   useDeleteDocument,
   useDeleteEvent,
   useExtractSyllabus,
+  useGetFeatures,
   useGetTopicStudyMaterial,
   useListCourseDocuments,
   useListCourses,
@@ -572,6 +574,8 @@ function TopicStudyGuideDialog({
   const materialQuery = useGetTopicStudyMaterial(courseId, topic.name, { query: { queryKey } });
   const regenerate = useRegenerateTopicStudyMaterial();
   const complete = useCompleteTopicStudyMaterial();
+  const featuresQuery = useGetFeatures({ query: { queryKey: getGetFeaturesQueryKey() } });
+  const tutorEnabled = featuresQuery.data?.tutorEnabled ?? false;
   const material = materialQuery.data;
   const done = isCompletedToday(material?.completedAt ?? null);
 
@@ -702,9 +706,11 @@ function TopicStudyGuideDialog({
         )}
 
         <DialogFooter className="mt-2 flex-row items-center justify-between gap-2 sm:justify-between">
-          <Link href={`/tutor?course=${courseId}`} onClick={onClose} data-testid="link-study-guide-tutor" className="text-[12px] font-semibold text-primary hover:underline">
-            Ask the tutor about this →
-          </Link>
+          {tutorEnabled ? (
+            <Link href={`/tutor?course=${courseId}`} onClick={onClose} data-testid="link-study-guide-tutor" className="text-[12px] font-semibold text-primary hover:underline">
+              Ask the tutor about this →
+            </Link>
+          ) : <span />}
           <Button
             onClick={done ? onClose : markDone}
             disabled={complete.isPending || !material}
@@ -1256,6 +1262,8 @@ function CalendarTab({ courseId }: { courseId: string }) {
 
 function PracticeTab({ courseId, topics }: { courseId: string; topics: CourseTopic[] }) {
   const [activeTopic, setActiveTopic] = useState<CourseTopic | null>(null);
+  const featuresQuery = useGetFeatures({ query: { queryKey: getGetFeaturesQueryKey() } });
+  const tutorEnabled = featuresQuery.data?.tutorEnabled ?? false;
 
   // Same "what to focus on" logic as the timeline's "Now" marker: the topic
   // already in progress, else the next not-started one, else whatever's
@@ -1277,7 +1285,11 @@ function PracticeTab({ courseId, topics }: { courseId: string; topics: CourseTop
             <p className="text-[13px] font-semibold text-primary">Study with tutor</p>
             <p className="mt-0.5 text-[11px] text-muted-foreground">Ask about any topic</p>
           </div>
-          <ArrowRight className="ml-auto h-4 w-4 shrink-0 text-muted-foreground" />
+          {tutorEnabled ? (
+            <ArrowRight className="ml-auto h-4 w-4 shrink-0 text-muted-foreground" />
+          ) : (
+            <span className="ml-auto shrink-0 rounded-full bg-secondary px-2 py-0.5 font-mono-ui text-[9px] uppercase tracking-wider text-muted-foreground">Soon</span>
+          )}
         </Link>
         <Link href={`/quiz?course=${courseId}`} data-testid="link-course-quiz" className="flex items-center gap-3 rounded-2xl border border-border p-4 transition-colors hover:border-primary/30 hover:bg-secondary">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent/30 text-primary">

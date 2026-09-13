@@ -36,6 +36,7 @@ import type {
   DocumentUpdateInput,
   DocumentUrl,
   ExtractionApplyResult,
+  Features,
   GetTutorConversationParams,
   HealthStatus,
   Institution,
@@ -300,6 +301,83 @@ export function useGetSignupConfig<TData = Awaited<ReturnType<typeof getSignupCo
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetSignupConfigQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetFeaturesUrl = () => {
+
+
+
+
+  return `/api/features`
+}
+
+/**
+ * @summary Server-side feature flags the frontend must not duplicate as its own env vars (public — no auth required)
+ */
+export const getFeatures = async ( options?: Parameters<typeof customFetch>[1]): Promise<Features> => {
+
+  return customFetch<Features>(getGetFeaturesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetFeaturesQueryKey = () => {
+    return [
+    `/api/features`
+    ] as const;
+    }
+
+
+export const getGetFeaturesQueryOptions = <TData = Awaited<ReturnType<typeof getFeatures>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getFeatures>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetFeaturesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getFeatures>>> = ({ signal }) => getFeatures({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getFeatures>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetFeaturesQueryResult = NonNullable<Awaited<ReturnType<typeof getFeatures>>>
+export type GetFeaturesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Server-side feature flags the frontend must not duplicate as its own env vars (public — no auth required)
+ */
+
+export function useGetFeatures<TData = Awaited<ReturnType<typeof getFeatures>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getFeatures>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetFeaturesQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

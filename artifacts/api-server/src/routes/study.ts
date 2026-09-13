@@ -34,6 +34,7 @@ import { applyQuizResult, touchStreak } from "../lib/mastery";
 import { retrieveRelevantChunks } from "../lib/documents";
 import { awardCompletionBadge } from "../lib/badges";
 import { assertBudgetAvailable, QuotaExceededError, ServicePausedError } from "../lib/usage";
+import { tutorEnabled, TUTOR_DISABLED_MESSAGE } from "../lib/features";
 import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
@@ -531,6 +532,8 @@ router.post("/courses/:courseId/reactivate", async (req, res) => {
 // ---------------------------------------------------------------------------
 
 router.get("/tutor/conversation", async (req, res) => {
+  if (!tutorEnabled()) return res.status(503).json({ error: TUTOR_DISABLED_MESSAGE });
+
   const supabase = req.supabase!;
   const courseId = typeof req.query.courseId === "string" ? req.query.courseId : null;
 
@@ -566,6 +569,11 @@ router.get("/tutor/conversation", async (req, res) => {
 });
 
 router.post("/tutor/messages", aiRateLimit, async (req, res) => {
+  // Checked before anything else — before parsing the body, before touching
+  // the database, before any Anthropic work. No budget check even runs: a
+  // disabled feature costs nothing, not "costs a little less."
+  if (!tutorEnabled()) return res.status(503).json({ error: TUTOR_DISABLED_MESSAGE });
+
   const supabase = req.supabase!;
   const userId = req.user!.id;
   const input = SendTutorMessageBody.parse(req.body);
@@ -611,7 +619,7 @@ router.post("/tutor/messages", aiRateLimit, async (req, res) => {
     await supabase.from("conversations").update({ updated_at: new Date().toISOString() }).eq("id", conversationId);
     await touchStreak(supabase, userId);
 
-    res.json(
+    return res.json(
       SendTutorMessageResponse.parse({
         role: "assistant",
         message: reply.message,
@@ -622,7 +630,7 @@ router.post("/tutor/messages", aiRateLimit, async (req, res) => {
   } catch (err) {
     if (err instanceof QuotaExceededError || err instanceof ServicePausedError) throw err;
     logger.error({ err }, "Tutor message failed");
-    res.status(502).json({ error: "The tutor couldn't respond just now." });
+    return res.status(502).json({ error: "The tutor couldn't respond just now." });
   }
 });
 
